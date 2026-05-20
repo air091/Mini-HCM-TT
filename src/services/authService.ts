@@ -105,15 +105,17 @@ export const register = async ({
   };
 };
 
-export const profile = async (userId: string): Promise<void> => {
+export const profile = async (userId: string) => {
   if (!userId) throw new Error("No user id");
+
   const userDoc = await db.collection("users").doc(userId).get();
-  // if (!userDoc.exists) throw new Error("No user");
-  // const user = {
-  //   id: userDoc.id,
-  //   ...userDoc.data(),
-  // };
-  console.log(userDoc.id);
-  console.log(userDoc.data());
-  // return user;
+
+  if (!userDoc.exists) throw new Error("No user");
+
+  const data = userDoc.data() as UserCredentialType;
+  const { password, ...safeUser } = data;
+  return {
+    id: userDoc.id,
+    ...safeUser,
+  };
 };
