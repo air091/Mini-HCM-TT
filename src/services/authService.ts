@@ -39,10 +39,15 @@ export const login = async ({
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
   const accessToken = signAccessToken({ sub: userDoc.id });
 
+  const now = new Date();
+
   await db.collection("refreshTokens").add({
     userId: userDoc.id,
     hashedToken: hashedRefreshToken,
-    expiredAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), // 3days
+    revokedAt: null,
+    expiresAt: new Date(now.getTime() + 1000 * 60), // 1min
+    createdAt: now,
+    updatedAt: now,
   });
 
   return {
