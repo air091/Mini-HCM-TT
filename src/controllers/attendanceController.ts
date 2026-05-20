@@ -29,7 +29,6 @@ export const punchOutController = async (
   try {
     const user = request.user;
     if (!user) return response.status(401).json({ message: "Unauthorized" });
-
     const punch = await punchOut(user.sub);
 
     return response
