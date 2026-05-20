@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { login, register } from "../services/authService";
-import { setRefreshTokenCookie } from "../lib/cookies";
+import { setRefreshTokenCookie } from "../libs/cookies";
 
 export const loginController = async (request: Request, response: Response) => {
   try {

@@ -1,5 +1,5 @@
-import { db } from "../config/firebase";
-import { signAccessToken, signRefreshToken } from "../lib/jwt";
+import { db } from "../configs/firebase";
+import { signAccessToken, signRefreshToken } from "../libs/jwt";
 import { LoginCredentialType, UserCredentialType } from "../types/userTypes";
 import bcrypt from "bcrypt";
 
@@ -100,3 +100,5 @@ export const register = async ({
     refreshToken,
   };
 };
+
+export const logout = async () => {};
