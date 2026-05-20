@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
-import { login, register } from "../services/authService";
+import { type Request, type Response } from "express";
+import { login, profile, register } from "../services/authService.js";
 import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
-} from "../libs/cookies";
+} from "../libs/cookies.js";
 
 export const loginController = async (request: Request, response: Response) => {
   try {
@@ -66,6 +66,28 @@ export const logoutController = async (
     return response.status(200).json({ message: "Logout successful" });
   } catch (error) {
     console.error(`Logout controller failed ${error}`);
+    return response
+      .status(500)
+      .json({ message: error instanceof Error ? error.message : error });
+  }
+};
+
+export const profileController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const { userId } = request.params;
+    console.log(userId);
+    if (!userId)
+      return response.status(400).json({ message: "User id is required" });
+
+    const user = await profile(userId as string);
+    return response
+      .status(200)
+      .json({ message: "User fetched successful", user });
+  } catch (error) {
+    console.error(`Profile controller failed ${error}`);
     return response
       .status(500)
       .json({ message: error instanceof Error ? error.message : error });

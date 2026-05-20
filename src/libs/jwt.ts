@@ -45,10 +45,10 @@ export function signAccessToken(payload: AccessPayload): string {
 }
 
 // verify
-export function verifyRefreshToken(token: string) {
+export function verifyRefreshToken(token: string): RefreshPayload {
   return jwt.verify(token, REFRESH_TOKEN_SECRET) as RefreshPayload;
 }
 
-export function verifyAccessToken(token: string) {
+export function verifyAccessToken(token: string): AccessPayload {
   return jwt.verify(token, ACCESS_TOKEN_SECRET) as AccessPayload;
 }

@@ -1,6 +1,9 @@
-import { db } from "../configs/firebase";
-import { signAccessToken, signRefreshToken } from "../libs/jwt";
-import { LoginCredentialType, UserCredentialType } from "../types/userTypes";
+import { db } from "../configs/firebase.js";
+import { signAccessToken, signRefreshToken } from "../libs/jwt.js";
+import {
+  type LoginCredentialType,
+  type UserCredentialType,
+} from "../types/userTypes.js";
 import bcrypt from "bcrypt";
 
 type AuthResponse = {
@@ -24,6 +27,7 @@ export const login = async ({
 
   if (isEmailExist.empty) throw new Error("Email not found");
   const userDoc = isEmailExist.docs[0];
+  if (!userDoc?.exists) throw new Error("User document not found");
   const user = userDoc.data() as UserCredentialType;
 
   // check password
@@ -74,37 +78,42 @@ export const register = async ({
   if (!isEmailExist.empty) throw new Error("Email already exists");
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await db.collection("users").add({
+  const userRef = await db.collection("users").add({
     name,
     email,
     password: hashedPassword,
     timeZone,
     schedule,
   });
-
-  const refreshToken = signRefreshToken({ sub: user.id });
+  const userId = userRef.id;
+  const refreshToken = signRefreshToken({ sub: userId });
   // hash refresh token
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-  const accessToken = signAccessToken({ sub: user.id });
+  const accessToken = signAccessToken({ sub: userId });
 
   // store refresh token to db
   await db.collection("refreshTokens").add({
-    userId: user.id,
+    userId: userId,
     hashedToken: hashedRefreshToken,
     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), // 3days
   });
 
   return {
-    id: user.id,
+    id: userId,
     accessToken,
     refreshToken,
   };
 };
 
-export const profile = async (userId: string) => {
+export const profile = async (userId: string): Promise<void> => {
   if (!userId) throw new Error("No user id");
   const userDoc = await db.collection("users").doc(userId).get();
-  if (!userDoc) throw new Error("No user");
-  const user = userDoc.data() as UserCredentialType;
-  return user;
+  // if (!userDoc.exists) throw new Error("No user");
+  // const user = {
+  //   id: userDoc.id,
+  //   ...userDoc.data(),
+  // };
+  console.log(userDoc.id);
+  console.log(userDoc.data());
+  // return user;
 };

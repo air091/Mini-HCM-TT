@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../libs/jwt";
+import { type Request, type Response, type NextFunction } from "express";
+import { type AccessPayload, verifyAccessToken } from "../libs/jwt.js";
 
 export const authenticate = async (
   request: Request,
@@ -7,20 +7,25 @@ export const authenticate = async (
   next: NextFunction,
 ) => {
   try {
-    const auth = request.headers.authorization;
-    if (!auth) return response.status(401).json({ message: "Unauthorized" });
+    const authHeader = request.headers.authorization;
+    if (!authHeader)
+      return response.status(401).json({ message: "Unauthorized" });
 
     // authority input validation token
-    if (!auth.startsWith("Bearer "))
-      return response.status(401).json({ message: "Invalid token" });
+    if (!authHeader.startsWith("Bearer "))
+      return response.status(401).json({ message: "Invalid token format" });
 
     // get token
-    const token = auth.split(" ")[1];
+    const token = authHeader.split(" ")[1];
     if (!token) return response.status(401).json({ message: "No token" });
 
     // verify token
-    const payload = verifyAccessToken(token);
+    const payload: AccessPayload = verifyAccessToken(token);
+    if (!payload)
+      return response.status(401).json({ message: "Invalid token" });
+
     request.user = payload;
+
     next();
   } catch (error) {
     console.error(error);
