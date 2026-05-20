@@ -8,10 +8,7 @@ import {
 } from "../types/userTypes";
 import bcrypt from "bcrypt";
 
-export const login = async ({
-  email,
-  password,
-}: LoginCredentialType): Promise<string> => {
+export const login = async ({ email, password }: LoginCredentialType) => {
   if (!email || !password) throw new Error("All fields are required");
 
   // check user
@@ -21,13 +18,19 @@ export const login = async ({
   return "";
 };
 
+type RegisterResponse = {
+  userId: string;
+  accessToken: string;
+  refreshToken: string;
+};
+
 export const register = async ({
   name,
   email,
   password,
   timeZone,
   schedule,
-}: RegisterCredentialType) => {
+}: RegisterCredentialType): Promise<RegisterResponse> => {
   name = name.trim();
   email = email.trim().toLowerCase();
   timeZone = timeZone.trim();
