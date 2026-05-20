@@ -4,13 +4,6 @@ import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
 } from "../libs/cookies.js";
-import {
-  signAccessToken,
-  signRefreshToken,
-  verifyRefreshToken,
-} from "../libs/jwt.js";
-import { db } from "../configs/firebase.js";
-import bcrypt from "bcrypt";
 
 export const loginController = async (request: Request, response: Response) => {
   try {
@@ -110,12 +103,10 @@ export const refreshController = async (
     const refreshRef = await refresh(token);
     setRefreshTokenCookie(response, refreshRef.newRefreshToken);
 
-    return response
-      .status(200)
-      .json({
-        message: "Token refreshed",
-        accessToken: refreshRef.newAccessToken,
-      });
+    return response.status(200).json({
+      message: "Token refreshed",
+      accessToken: refreshRef.newAccessToken,
+    });
   } catch (error) {
     console.error(`Refresh controller failed ${error}`);
     return response
