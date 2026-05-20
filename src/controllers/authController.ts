@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { login, profile, register } from "../services/authService.js";
+import { login, profile, refresh, register } from "../services/authService.js";
 import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
@@ -106,60 +106,16 @@ export const refreshController = async (
   response: Response,
 ) => {
   try {
-    const token = request.cookies.refreshToken;
-    if (!token) return response.status(401).json({ message: "Unauthorized" });
-
-    const payload = verifyRefreshToken(token);
-
-    // check user
-    const userDoc = await db.collection("users").doc(payload.sub).get();
-    if (!userDoc.exists)
-      return response.status(404).json({ message: "No user found" });
-
-    // get the valid token (!revoked)
-    const storedToken = await db
-      .collection("refreshTokens")
-      .where("userId", "==", userDoc.id)
-      .where("revokedAt", "==", null)
-      .limit(1)
-      .get();
-    if (storedToken.empty)
-      return response.status(404).json({ message: "No active token found" });
-
-    const tokenSnapshot = storedToken.docs[0];
-    const tokenDoc = tokenSnapshot?.data();
-
-    // check validation by date
-    if (tokenDoc?.expiresAt.toDate() < new Date())
-      return response.status(401).json({ message: "Token expired" });
-
-    // rotate token
-    // revoke token
-    await tokenSnapshot?.ref.update({
-      revokedAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // create new token
-    const newRefreshToken = signRefreshToken({ sub: userDoc.id });
-    const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
-    const newAccessToken = signAccessToken({ sub: userDoc.id });
-
-    // store hashed refresh token in db
-    const now = new Date();
-    await db.collection("refreshTokens").add({
-      userId: userDoc.id,
-      hashedToken: hashedRefreshToken,
-      revokedAt: null,
-      expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3), // 1min
-      createdAt: now,
-      updatedAt: now,
-    });
-    setRefreshTokenCookie(response, newRefreshToken);
+    const token: string = request.cookies.refreshToken;
+    const refreshRef = await refresh(token);
+    setRefreshTokenCookie(response, refreshRef.newRefreshToken);
 
     return response
       .status(200)
-      .json({ message: "Token refreshed", accessToken: newAccessToken });
+      .json({
+        message: "Token refreshed",
+        accessToken: refreshRef.newAccessToken,
+      });
   } catch (error) {
     console.error(`Refresh controller failed ${error}`);
     return response

@@ -1,5 +1,9 @@
 import { db } from "../configs/firebase.js";
-import { signAccessToken, signRefreshToken } from "../libs/jwt.js";
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from "../libs/jwt.js";
 import {
   type LoginCredentialType,
   type UserCredentialType,
@@ -122,5 +126,58 @@ export const profile = async (userId: string) => {
   return {
     id: userDoc.id,
     ...safeUser,
+  };
+};
+
+export const refresh = async (token: string) => {
+  if (!token) throw new Error("Unauthorized");
+  const payload = verifyRefreshToken(token);
+
+  // check user
+  const userDoc = await db.collection("users").doc(payload.sub).get();
+
+  if (!userDoc.exists) throw new Error("No user found");
+
+  // get the valid token (!revoked)
+  const storedToken = await db
+    .collection("refreshTokens")
+    .where("userId", "==", userDoc.id)
+    .where("revokedAt", "==", null)
+    .limit(1)
+    .get();
+
+  const tokenSnapshot = storedToken.docs[0];
+  const tokenDoc = tokenSnapshot?.data();
+
+  // check validation by date
+  if (tokenDoc?.expiresAt.toDate() < new Date())
+    throw new Error("Token expired");
+
+  // rotate token
+  // revoke token
+  await tokenSnapshot?.ref.update({
+    revokedAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  // create new token
+  const newRefreshToken = signRefreshToken({ sub: userDoc.id });
+  const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+  const newAccessToken = signAccessToken({ sub: userDoc.id });
+
+  // store hashed refresh token in db
+  const now = new Date();
+  await db.collection("refreshTokens").add({
+    userId: userDoc.id,
+    hashedToken: hashedRefreshToken,
+    revokedAt: null,
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3), // 3d
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return {
+    newRefreshToken,
+    newAccessToken,
   };
 };
