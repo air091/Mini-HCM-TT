@@ -66,6 +66,7 @@ export const register = async ({
   email,
   password,
   timeZone,
+  role,
   schedule,
 }: UserCredentialType): Promise<AuthResponse> => {
   name = name.trim();
@@ -92,6 +93,7 @@ export const register = async ({
     email,
     password: hashedPassword,
     timeZone,
+    role,
     schedule,
   });
   const userId = userRef.id;
