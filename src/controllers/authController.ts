@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { register } from "../services/authService";
+import { setRefreshTokenCookie } from "../lib/cookies";
 
 export const registerController = async (
   request: Request,
@@ -15,7 +16,17 @@ export const registerController = async (
       timeZone,
       schedule,
     });
-    return response.status(201).json({ id: newUser });
+
+    // set referesh token in coookie
+    setRefreshTokenCookie(response, newUser.refreshToken);
+
+    return response
+      .status(201)
+      .json({
+        message: "Register successful",
+        user: newUser.userId,
+        accessToken: newUser.accessToken,
+      });
   } catch (error) {
     console.error(error);
     return response

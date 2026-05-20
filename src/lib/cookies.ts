@@ -6,12 +6,12 @@ dotenv.config();
 const isProduction: boolean = process.env.config === "production";
 
 export function setRefreshTokenCookie(response: Response, token: string) {
-  return response.cookie("refreshToken", {
+  return response.cookie("refreshToken", token, {
     httpOnly: true,
     secure: isProduction,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 3, // 3days
+    maxAge: 1000 * 60 * 60 * 24 * 3, // 3days
   });
 }
 
