@@ -101,4 +101,10 @@ export const register = async ({
   };
 };
 
-export const logout = async () => {};
+export const profile = async (userId: string) => {
+  if (!userId) throw new Error("No user id");
+  const userDoc = await db.collection("users").doc(userId).get();
+  if (!userDoc) throw new Error("No user");
+  const user = userDoc.data() as UserCredentialType;
+  return user;
+};

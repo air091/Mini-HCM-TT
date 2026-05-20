@@ -21,6 +21,7 @@ export const authenticate = async (
     // verify token
     const payload = verifyAccessToken(token);
     request.user = payload;
+    next();
   } catch (error) {
     console.error(error);
     return response

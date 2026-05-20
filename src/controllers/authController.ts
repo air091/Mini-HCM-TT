@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { login, register } from "../services/authService";
-import { setRefreshTokenCookie } from "../libs/cookies";
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from "../libs/cookies";
 
 export const loginController = async (request: Request, response: Response) => {
   try {
@@ -16,7 +19,7 @@ export const loginController = async (request: Request, response: Response) => {
       accessToken: user.accessToken,
     });
   } catch (error) {
-    console.log(error);
+    console.log(`Login controller failed ${error}`);
     return response
       .status(500)
       .json({ message: error instanceof Error ? error.message : error });
@@ -47,7 +50,22 @@ export const registerController = async (
       accessToken: newUser.accessToken,
     });
   } catch (error) {
-    console.error(error);
+    console.error(`Register controller failed ${error}`);
+    return response
+      .status(500)
+      .json({ message: error instanceof Error ? error.message : error });
+  }
+};
+
+export const logoutController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    clearRefreshTokenCookie(response);
+    return response.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error(`Logout controller failed ${error}`);
     return response
       .status(500)
       .json({ message: error instanceof Error ? error.message : error });
