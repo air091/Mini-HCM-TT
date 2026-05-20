@@ -1,4 +1,4 @@
-export type RegisterCredentialType = {
+export type UserCredentialType = {
   name: string;
   email: string;
   password: string;
