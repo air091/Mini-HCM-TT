@@ -20,7 +20,7 @@ type RefreshPayload = JwtPayload & {
   sub: string;
 };
 
-type AccessPayload = JwtPayload & {
+export type AccessPayload = JwtPayload & {
   sub: string;
 };
 
