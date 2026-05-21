@@ -45,13 +45,21 @@ export const metrics = async (userId: string, attendanceId: string) => {
     attendance.timeOut.toDate(),
   );
 
-  return {
+  const summaryRef = await db.collection("dailySummary").add({
+    attendanceId: attendance.id,
     regularHrs: regularHours,
     totalHrs: totalHours,
     overtime,
     nightDifferential,
     late,
     early,
+  });
+
+  const summarySnapshot = await summaryRef.get();
+
+  return {
+    id: summarySnapshot.id,
+    ...summarySnapshot.data(),
   };
 };
 
@@ -104,7 +112,3 @@ function getNightDifferential(timeIn: Date, timeOut: Date): number {
 
   return Math.round((overlapMs / (1000 * 60 * 60)) * 100) / 100;
 }
-
-// const hours = await db.collection("attendanceMetrics").add({
-//   nightDifferential
-// })
