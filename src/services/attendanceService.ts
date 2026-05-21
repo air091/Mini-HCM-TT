@@ -53,7 +53,7 @@ export const getAttendancesByUser = async (userId: string) => {
 
   const data = await Promise.all(
     attendanceSnapshots.docs.map(async (doc) => {
-      const d = doc.data();
+      const attendanceData = doc.data();
 
       const dailySummarySnapshots = await db
         .collection("dailySummary")
@@ -65,11 +65,11 @@ export const getAttendancesByUser = async (userId: string) => {
 
       return {
         id: doc.id,
-        userId: d.userId,
-        timeIn: d.timeIn?.toDate() ?? null,
-        timeOut: d.timeOut?.toDate() ?? null,
-        isComplete: d.isComplete,
-        date: d.date?.toDate() ?? null,
+        userId: attendanceData.userId,
+        timeIn: attendanceData.timeIn?.toDate() ?? null,
+        timeOut: attendanceData.timeOut?.toDate() ?? null,
+        isComplete: attendanceData.isComplete,
+        date: attendanceData.date?.toDate() ?? null,
 
         metric: summary
           ? {
