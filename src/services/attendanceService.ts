@@ -42,3 +42,37 @@ export const punchOut = async (userId: string) => {
   const endSnapshot = activeAttendance.docs[0];
   return endSnapshot?.ref.update({ timeOut: now, isComplete: true });
 };
+
+export const getAttendanceById = async (attendanceId: string) => {
+  const attendanceSnapshot = await db
+    .collection("attendance")
+    .doc(attendanceId)
+    .get();
+
+  return {
+    id: attendanceSnapshot.id,
+    ...attendanceSnapshot.data(),
+  };
+};
+
+export const getAttendancesByUser = async (userId: string) => {
+  const attendanceSnapshots = await db
+    .collection("attendance")
+    .where("userId", "==", userId)
+    .get();
+
+  if (attendanceSnapshots.empty) throw new Error("No attendance found");
+  const data = attendanceSnapshots.docs.map((doc) => {
+    const d = doc.data();
+    return {
+      id: doc.id,
+      userId: d.userId,
+      timeIn: d.timeIn?.toDate() ?? null,
+      timeOut: d.timeOut?.toDate() ?? null,
+      isComplete: d.isComplete,
+      date: d.date?.toDate() ?? null,
+    };
+  });
+
+  return data;
+};

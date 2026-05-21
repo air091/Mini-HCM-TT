@@ -49,7 +49,7 @@ export const login = async ({
     userId: userDoc.id,
     hashedToken: hashedRefreshToken,
     revokedAt: null,
-    expiresAt: new Date(now.getTime() + 1000 * 60), // 1min
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3), // 1min
     createdAt: now,
     updatedAt: now,
   });

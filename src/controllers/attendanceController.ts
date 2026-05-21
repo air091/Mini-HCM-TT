@@ -1,6 +1,49 @@
 import type { Request, Response } from "express";
-import { punchIn, punchOut } from "../services/attendanceService.js";
-import { totalHours } from "../services/calculationService.js";
+import {
+  getAttendanceById,
+  getAttendancesByUser,
+  punchIn,
+  punchOut,
+} from "../services/attendanceService.js";
+import { metrics } from "../services/calculationService.js";
+
+export const getAttendancesController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const user = request.user;
+    if (!user) return response.status(401).json({ message: "Unauthorized" });
+
+    const attendances = await getAttendancesByUser(user.sub);
+    return response.status(200).json({ attendances });
+  } catch (error) {
+    console.error(`Attendaces controller failed ${error}`);
+    return response
+      .status(500)
+      .json({ message: error instanceof Error ? error.message : error });
+  }
+};
+
+export const getAttendanceByIdController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const user = request.user;
+    if (!user) return response.status(401).json({ message: "Unauthorized" });
+
+    const { attendanceId } = request.params;
+
+    const attendance = await getAttendanceById(attendanceId as string);
+    return response.status(200).json({ attendance });
+  } catch (error) {
+    console.error(`Attendace by ID controller failed ${error}`);
+    return response
+      .status(500)
+      .json({ message: error instanceof Error ? error.message : error });
+  }
+};
 
 export const punchInController = async (
   request: Request,
@@ -43,7 +86,7 @@ export const punchOutController = async (
   }
 };
 
-export const calculateController = async (
+export const metricController = async (
   request: Request,
   response: Response,
 ) => {
@@ -51,9 +94,9 @@ export const calculateController = async (
     const user = request.user;
     if (!user) return response.status(401).json({ message: "Unauthorized" });
 
-    const hours = await totalHours(user.sub);
+    // const hours = await metrics();
 
-    return response.status(200).json({ message: hours });
+    // return response.status(200).json({ message: hours });
   } catch (error) {
     console.error(`Calculate controller failed ${error}`);
     return response

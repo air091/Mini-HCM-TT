@@ -101,6 +101,7 @@ export const refreshController = async (
   try {
     const token: string = request.cookies.refreshToken;
     const refreshRef = await refresh(token);
+
     setRefreshTokenCookie(response, refreshRef.newRefreshToken);
 
     return response.status(200).json({
