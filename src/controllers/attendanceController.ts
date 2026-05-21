@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { punchIn, punchOut } from "../services/attendanceService.js";
+import { totalHours } from "../services/calculationService.js";
 
 export const punchInController = async (
   request: Request,
@@ -36,6 +37,25 @@ export const punchOutController = async (
       .json({ message: "User punched in successully", punch });
   } catch (error) {
     console.error(`Punch out controller failed ${error}`);
+    return response
+      .status(500)
+      .json({ message: error instanceof Error ? error.message : error });
+  }
+};
+
+export const calculateController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const user = request.user;
+    if (!user) return response.status(401).json({ message: "Unauthorized" });
+
+    const hours = await totalHours(user.sub);
+
+    return response.status(200).json({ message: hours });
+  } catch (error) {
+    console.error(`Calculate controller failed ${error}`);
     return response
       .status(500)
       .json({ message: error instanceof Error ? error.message : error });

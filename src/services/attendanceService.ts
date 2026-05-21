@@ -1,6 +1,16 @@
 import { db } from "../configs/firebase.js";
 
 export const punchIn = async (userId: string) => {
+  // check active document by user
+  const activePunchRef = await db
+    .collection("attendance")
+    .where("userId", "==", userId)
+    .where("isComplete", "==", false)
+    .limit(1)
+    .get();
+
+  if (!activePunchRef.empty) throw new Error("Attendance already punched in");
+
   const now = new Date();
   const startRef = await db.collection("attendance").add({
     date: now,
