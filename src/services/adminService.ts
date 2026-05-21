@@ -174,4 +174,76 @@ export const getDailyEmployeeReports = async (dateQuery: string) => {
 };
 
 // admin can view weekly reports of  employees with all metrics
-export const getWeeklyEmployeeReports = async () => {};
+export const getWeeklyEmployeeReports = async (dateQuery: string) => {
+  if (!dateQuery) throw new Error("Date query is required");
+
+  const [year, month, day] = dateQuery.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    throw new Error("Invalid date format. Use YYYY-MM-DD");
+  }
+
+  const timezoneOffsetHours = 8;
+  const selectedDate = new Date(
+    Date.UTC(year, month - 1, day) - timezoneOffsetHours * 60 * 60 * 1000,
+  );
+  const selectedDateInTimezone = new Date(
+    selectedDate.getTime() + timezoneOffsetHours * 60 * 60 * 1000,
+  );
+  const daysFromMonday = (selectedDateInTimezone.getUTCDay() + 6) % 7;
+
+  const weekStartYear = selectedDateInTimezone.getUTCFullYear();
+  const weekStartMonth = selectedDateInTimezone.getUTCMonth();
+  const weekStartDay = selectedDateInTimezone.getUTCDate() - daysFromMonday;
+
+  const start = new Date(
+    Date.UTC(weekStartYear, weekStartMonth, weekStartDay) -
+      timezoneOffsetHours * 60 * 60 * 1000,
+  );
+  const end = new Date(
+    Date.UTC(weekStartYear, weekStartMonth, weekStartDay + 7) -
+      timezoneOffsetHours * 60 * 60 * 1000,
+  );
+
+  const attendanceSnapshot = await db
+    .collection("attendance")
+    .where("date", ">=", start)
+    .where("date", "<", end)
+    .get();
+
+  if (attendanceSnapshot.empty) throw new Error("No reports");
+
+  return await Promise.all(
+    attendanceSnapshot.docs.map(async (doc) => {
+      const attendanceData = doc.data();
+
+      const summarySnapshot = await db
+        .collection("dailySummary")
+        .where("attendanceId", "==", doc.id)
+        .limit(1)
+        .get();
+
+      const summary = summarySnapshot.docs[0]?.data();
+
+      return {
+        id: doc.id,
+        userId: attendanceData.userId,
+        timeIn: toDateSafe(attendanceData.timeIn),
+        timeOut: toDateSafe(attendanceData.timeOut),
+        isComplete: attendanceData.isComplete,
+        date: toDateSafe(attendanceData.date),
+        metric: summary
+          ? {
+              id: summarySnapshot.docs[0]?.id,
+              regularHrs: summary.regularHrs ?? 0,
+              totalHrs: summary.totalHrs ?? 0,
+              overtime: summary.overtimeMins ?? 0,
+              nightDifferential: summary.nightDifferentialMins ?? 0,
+              late: summary.lateMins ?? 0,
+              early: summary.earlyMins ?? 0,
+            }
+          : null,
+      };
+    }),
+  );
+};

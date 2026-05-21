@@ -3,6 +3,7 @@ import {
   getAllEmployees,
   getDailyEmployeeReports,
   getEmployee,
+  getWeeklyEmployeeReports,
   updateEmployeePunches,
 } from "../services/adminService.js";
 
@@ -94,6 +95,25 @@ export const dailyReportController = async (
     return response.status(200).json({ daily_attendance: attendance });
   } catch (error) {
     console.log(`Daily report controller failed ${error}`);
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const weeklyReportController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const user = request.user;
+    if (!user) return response.status(401).json({ message: "Unauthorized" });
+
+    const { date } = request.query;
+    const attendance = await getWeeklyEmployeeReports(date as string);
+    return response.status(200).json({ weekly_attendance: attendance });
+  } catch (error) {
+    console.log(`Weekly report controller failed ${error}`);
     return response.status(500).json({
       message: error instanceof Error ? error.message : "Internal server error",
     });
