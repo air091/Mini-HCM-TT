@@ -25,22 +25,22 @@ export const metrics = async (userId: string, attendanceId: string) => {
     attendance.timeOut.toDate(),
   );
 
-  const nightDifferential = getNightDifferential(
+  const nightDifferentialMins = getNightDifferentialMinutes(
     attendance.timeIn.toDate(),
     attendance.timeOut.toDate(),
   );
 
-  const overtime = getOvertimeMinutes(
+  const overtimeMins = getOvertimeMinutes(
     schedule.end.toDate(),
     attendance.timeOut.toDate(),
   );
 
-  const late = getLateMinutes(
+  const lateMins = getLateMinutes(
     schedule.start.toDate(),
     attendance.timeIn.toDate(),
   );
 
-  const early = getUnderTimeMinutes(
+  const earlyMins = getUnderTimeMinutes(
     schedule.end.toDate(),
     attendance.timeOut.toDate(),
   );
@@ -49,10 +49,10 @@ export const metrics = async (userId: string, attendanceId: string) => {
     attendanceId: attendance.id,
     regularHrs: regularHours,
     totalHrs: totalHours,
-    overtime,
-    nightDifferential,
-    late,
-    early,
+    overtimeMins,
+    nightDifferentialMins,
+    lateMins,
+    earlyMins,
   });
 
   const summarySnapshot = await summaryRef.get();
@@ -94,7 +94,7 @@ function getOvertimeMinutes(endShift: Date, timeOut: Date): number {
   return Math.round(diffMins * 100) / 100;
 }
 
-function getNightDifferential(timeIn: Date, timeOut: Date): number {
+function getNightDifferentialMinutes(timeIn: Date, timeOut: Date): number {
   const ndStart = new Date(timeIn);
   ndStart.setHours(22, 0, 0, 0);
 
@@ -110,5 +110,5 @@ function getNightDifferential(timeIn: Date, timeOut: Date): number {
 
   if (overlapMs <= 0) return 0;
 
-  return Math.round((overlapMs / (1000 * 60 * 60)) * 100) / 100;
+  return Math.round((overlapMs / (1000 * 60)) * 100) / 100;
 }
