@@ -11,11 +11,21 @@ export const metrics = async (userId: string, attendanceId: string) => {
     throw new Error("User schedules are missing");
 
   const attendance = await getAttendanceById(attendanceId);
-  if (!attendance?.timeIn || !attendance?.timeOut) {
+
+  if (!attendance?.timeIn || !attendance?.timeOut)
     throw new Error("Incomplete attendance record");
-  }
+
+  const summary = await db
+    .collection("dailySummary")
+    .where("attendanceId", "==", attendanceId)
+    .limit(1)
+    .get();
+
+  if (!summary.empty) throw new Error("Already calculated");
 
   const regularHours = getTotalHours(
+    attendance.timeIn.toDate(),
+    attendance.timeOut.toDate(),
     schedule.start.toDate(),
     schedule.end.toDate(),
   );
@@ -23,6 +33,8 @@ export const metrics = async (userId: string, attendanceId: string) => {
   const totalHours = getTotalHours(
     attendance.timeIn.toDate(),
     attendance.timeOut.toDate(),
+    schedule.start.toDate(),
+    schedule.end.toDate(),
   );
 
   const nightDifferentialMins = getNightDifferentialMinutes(
@@ -63,10 +75,30 @@ export const metrics = async (userId: string, attendanceId: string) => {
   };
 };
 
-function getTotalHours(timeIn: Date, timeOut: Date): number {
-  const diffHours = (timeOut.getTime() - timeIn.getTime()) / (1000 * 60 * 60);
+function getTotalHours(
+  timeIn: Date,
+  timeOut: Date,
+  startShift: Date,
+  endShift: Date,
+): number {
   const BREAKTIME = 1;
-  return Math.round(Math.max(0, diffHours - BREAKTIME) * 100) / 100;
+  const MAX_HOURS = 8;
+
+  // clamp to schedule window
+  const effectiveStart = new Date(
+    Math.max(timeIn.getTime(), startShift.getTime()),
+  );
+
+  const effectiveEnd = new Date(
+    Math.min(timeOut.getTime(), endShift.getTime()),
+  );
+
+  const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  const total = Math.min(Math.max(diffHours - BREAKTIME, 0), MAX_HOURS);
+
+  return Math.round(total * 100) / 100;
 }
 
 function getLateMinutes(startShift: Date, timeIn: Date): number {
