@@ -11,7 +11,7 @@ import { authenticate } from "../middlewares/authMiddleware.js";
 const router: Router = Router();
 
 router.post("/punch-in", authenticate, punchInController);
-router.post("/calculate", authenticate, metricController);
+router.post("/calculate/:attendanceId", authenticate, metricController);
 
 router.patch("/punch-out", authenticate, punchOutController);
 

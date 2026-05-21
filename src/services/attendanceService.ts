@@ -1,5 +1,13 @@
 import { db } from "../configs/firebase.js";
 
+type AttendanceType = {
+  date: FirebaseFirestore.Timestamp;
+  isComplete: boolean;
+  timeIn?: FirebaseFirestore.Timestamp;
+  timeOut?: FirebaseFirestore.Timestamp;
+  userId: string;
+};
+
 export const getAttendanceById = async (attendanceId: string) => {
   const attendanceSnapshot = await db
     .collection("attendance")
@@ -8,7 +16,7 @@ export const getAttendanceById = async (attendanceId: string) => {
 
   return {
     id: attendanceSnapshot.id,
-    ...attendanceSnapshot.data(),
+    ...(attendanceSnapshot.data() as Omit<AttendanceType, "id">),
   };
 };
 

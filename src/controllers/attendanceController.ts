@@ -94,9 +94,13 @@ export const metricController = async (
     const user = request.user;
     if (!user) return response.status(401).json({ message: "Unauthorized" });
 
-    // const hours = await metrics();
+    const { attendanceId } = request.params;
+    if (!attendanceId)
+      return response.status(400).json({ message: "Missing param" });
 
-    // return response.status(200).json({ message: hours });
+    const hours = await metrics(user.sub, attendanceId as string);
+
+    return response.status(200).json({ message: hours });
   } catch (error) {
     console.error(`Calculate controller failed ${error}`);
     return response

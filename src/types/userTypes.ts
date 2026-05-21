@@ -10,6 +10,17 @@ export type UserCredentialType = {
   };
 };
 
+export type UserSafeCredentialType = {
+  name: string;
+  email: string;
+  role: string;
+  timeZone: string;
+  schedule: {
+    start: string;
+    end: string;
+  };
+};
+
 export type LoginCredentialType = {
   email: string;
   password: string;
