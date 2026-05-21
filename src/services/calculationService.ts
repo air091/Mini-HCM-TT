@@ -25,12 +25,21 @@ export const metrics = async (userId: string, attendanceId: string) => {
     attendance.timeOut.toDate(),
   );
 
-  const late = getLate(schedule.start.toDate(), attendance.timeIn.toDate());
+  const late = getLateMinutes(
+    schedule.start.toDate(),
+    attendance.timeIn.toDate(),
+  );
+
+  const early = getUnderTimeMinutes(
+    schedule.end.toDate(),
+    attendance.timeOut.toDate(),
+  );
 
   return {
     regularHrs: regularHours,
     totalHrs: totalHours,
-    late: late,
+    late,
+    early,
   };
 };
 
@@ -41,7 +50,7 @@ function getTotalHours(timeIn: Date, timeOut: Date): number {
   return total;
 }
 
-function getLate(startShift: Date, timeIn: Date): number {
+function getLateMinutes(startShift: Date, timeIn: Date): number {
   // check schedule start and punched in
   const late = Math.max(
     0,
@@ -50,9 +59,15 @@ function getLate(startShift: Date, timeIn: Date): number {
   return Math.round(late * 100) / 100;
 }
 
+function getUnderTimeMinutes(endShift: Date, timeOut: Date): number {
+  const early = Math.max(
+    0,
+    (timeOut.getTime() - endShift.getTime()) / (1000 * 60),
+  );
+  return Math.round(early * 100) / 100;
+}
+
 // const hours = await db.collection("attendanceMetrics").add({
 //   overtime
 //   nightDifferential
-//   late
-//   undertime
 // })
