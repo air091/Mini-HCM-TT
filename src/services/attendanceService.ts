@@ -27,17 +27,41 @@ export const getAttendancesByUser = async (userId: string) => {
     .get();
 
   if (attendanceSnapshots.empty) throw new Error("No attendance found");
-  const data = attendanceSnapshots.docs.map((doc) => {
-    const d = doc.data();
-    return {
-      id: doc.id,
-      userId: d.userId,
-      timeIn: d.timeIn?.toDate() ?? null,
-      timeOut: d.timeOut?.toDate() ?? null,
-      isComplete: d.isComplete,
-      date: d.date?.toDate() ?? null,
-    };
-  });
+
+  const data = await Promise.all(
+    attendanceSnapshots.docs.map(async (doc) => {
+      const d = doc.data();
+
+      const dailySummarySnapshots = await db
+        .collection("dailySummary")
+        .where("attendanceId", "==", doc.id)
+        .limit(1)
+        .get();
+
+      const summary = dailySummarySnapshots.docs[0]?.data();
+
+      return {
+        id: doc.id,
+        userId: d.userId,
+        timeIn: d.timeIn?.toDate() ?? null,
+        timeOut: d.timeOut?.toDate() ?? null,
+        isComplete: d.isComplete,
+        date: d.date?.toDate() ?? null,
+
+        metric: summary
+          ? {
+              id: dailySummarySnapshots.docs[0]?.id,
+              regularHrs: summary.regularHrs ?? 0,
+              totalHrs: summary.totalHrs ?? 0,
+              overtime: summary.overtimeMins ?? 0,
+              nightDifferential: summary.nightDifferentialMins ?? 0,
+              late: summary.lateMins ?? 0,
+              early: summary.earlyMins ?? 0,
+            }
+          : null,
+      };
+    }),
+  );
 
   return data;
 };
