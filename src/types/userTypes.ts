@@ -5,8 +5,8 @@ export type UserCredentialType = {
   role: string;
   timeZone: string;
   schedule: {
-    start: string;
-    end: string;
+    start: FirebaseFirestore.Timestamp;
+    end: FirebaseFirestore.Timestamp;
   };
 };
 

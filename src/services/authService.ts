@@ -128,6 +128,10 @@ export const profile = async (userId: string) => {
   return {
     id: userDoc.id,
     ...safeUser,
+    schedule: {
+      start: safeUser.schedule.start.toDate(),
+      end: safeUser.schedule.end.toDate(),
+    },
   };
 };
 

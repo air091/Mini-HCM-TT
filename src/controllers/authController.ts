@@ -77,15 +77,13 @@ export const profileController = async (
   response: Response,
 ) => {
   try {
-    const { userId } = request.params;
-    console.log(userId);
-    if (!userId)
-      return response.status(400).json({ message: "User id is required" });
+    const user = request.user;
+    if (!user) return response.status(400).json({ message: "Unauthorized" });
 
-    const user = await profile(userId as string);
+    const userInfo = await profile(user.sub as string);
     return response
       .status(200)
-      .json({ message: "User fetched successful", user });
+      .json({ message: "User fetched successful", user: userInfo });
   } catch (error) {
     console.error(`Profile controller failed ${error}`);
     return response
