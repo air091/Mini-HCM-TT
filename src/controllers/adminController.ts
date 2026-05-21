@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import {
   getAllEmployees,
+  getDailyEmployeeReports,
   getEmployee,
   updateEmployeePunches,
 } from "../services/adminService.js";
@@ -68,14 +69,31 @@ export const updateEmployeePunchesController = async (
       timeIn,
       timeOut,
     );
-    return response
-      .status(200)
-      .json({
-        message: "Employee punch updated successfully",
-        attendance: updatedAttendance,
-      });
+    return response.status(200).json({
+      message: "Employee punch updated successfully",
+      attendance: updatedAttendance,
+    });
   } catch (error) {
     console.log(`Update employee punches controller failed ${error}`);
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const dailyReportController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const user = request.user;
+    if (!user) return response.status(401).json({ message: "Unauthorized" });
+
+    const { date } = request.query;
+    const attendance = await getDailyEmployeeReports(date as string);
+    return response.status(200).json({ daily_attendance: attendance });
+  } catch (error) {
+    console.log(`Daily report controller failed ${error}`);
     return response.status(500).json({
       message: error instanceof Error ? error.message : "Internal server error",
     });
