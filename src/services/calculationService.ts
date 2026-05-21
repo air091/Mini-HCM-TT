@@ -25,6 +25,11 @@ export const metrics = async (userId: string, attendanceId: string) => {
     attendance.timeOut.toDate(),
   );
 
+  const nightDifferential = getNightDifferential(
+    attendance.timeIn.toDate(),
+    attendance.timeOut.toDate(),
+  );
+
   const overtime = getOvertimeMinutes(
     schedule.end.toDate(),
     attendance.timeOut.toDate(),
@@ -44,16 +49,16 @@ export const metrics = async (userId: string, attendanceId: string) => {
     regularHrs: regularHours,
     totalHrs: totalHours,
     overtime,
+    nightDifferential,
     late,
     early,
   };
 };
 
 function getTotalHours(timeIn: Date, timeOut: Date): number {
-  const diffMs = timeOut.getTime() - timeIn.getTime();
+  const diffHours = (timeOut.getTime() - timeIn.getTime()) / (1000 * 60 * 60);
   const BREAKTIME = 1;
-  const total = Math.floor(diffMs / (1000 * 60 * 60) - BREAKTIME);
-  return total;
+  return Math.round(Math.max(0, diffHours - BREAKTIME) * 100) / 100;
 }
 
 function getLateMinutes(startShift: Date, timeIn: Date): number {
@@ -68,17 +73,38 @@ function getLateMinutes(startShift: Date, timeIn: Date): number {
 function getUnderTimeMinutes(endShift: Date, timeOut: Date): number {
   const early = Math.max(
     0,
-    (timeOut.getTime() - endShift.getTime()) / (1000 * 60),
+    (endShift.getTime() - timeOut.getTime()) / (1000 * 60),
   );
   return Math.round(early * 100) / 100;
 }
 
 function getOvertimeMinutes(endShift: Date, timeOut: Date): number {
-  const diffMs = (timeOut.getTime() - endShift.getTime()) / (1000 * 60);
-  return Math.round(diffMs * 100) / 100;
+  const diffMins = Math.max(
+    0,
+    (timeOut.getTime() - endShift.getTime()) / (1000 * 60),
+  );
+  return Math.round(diffMins * 100) / 100;
+}
+
+function getNightDifferential(timeIn: Date, timeOut: Date): number {
+  const ndStart = new Date(timeIn);
+  ndStart.setHours(22, 0, 0, 0);
+
+  const ndEnd = new Date(ndStart);
+  ndEnd.setDate(ndEnd.getDate() + 1);
+  ndEnd.setHours(6, 0, 0, 0);
+
+  const overlapStart = Math.max(timeIn.getTime(), ndStart.getTime());
+
+  const overlapEnd = Math.min(timeOut.getTime(), ndEnd.getTime());
+
+  const overlapMs = overlapEnd - overlapStart;
+
+  if (overlapMs <= 0) return 0;
+
+  return Math.round((overlapMs / (1000 * 60 * 60)) * 100) / 100;
 }
 
 // const hours = await db.collection("attendanceMetrics").add({
-//   overtime
 //   nightDifferential
 // })
