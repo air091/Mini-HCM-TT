@@ -25,6 +25,11 @@ export const metrics = async (userId: string, attendanceId: string) => {
     attendance.timeOut.toDate(),
   );
 
+  const overtime = getOvertimeMinutes(
+    schedule.end.toDate(),
+    attendance.timeOut.toDate(),
+  );
+
   const late = getLateMinutes(
     schedule.start.toDate(),
     attendance.timeIn.toDate(),
@@ -38,6 +43,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
   return {
     regularHrs: regularHours,
     totalHrs: totalHours,
+    overtime,
     late,
     early,
   };
@@ -65,6 +71,11 @@ function getUnderTimeMinutes(endShift: Date, timeOut: Date): number {
     (timeOut.getTime() - endShift.getTime()) / (1000 * 60),
   );
   return Math.round(early * 100) / 100;
+}
+
+function getOvertimeMinutes(endShift: Date, timeOut: Date): number {
+  const diffMs = (timeOut.getTime() - endShift.getTime()) / (1000 * 60);
+  return Math.round(diffMs * 100) / 100;
 }
 
 // const hours = await db.collection("attendanceMetrics").add({
