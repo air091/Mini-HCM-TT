@@ -85,26 +85,3 @@ export const punchOutController = async (
       .json({ message: error instanceof Error ? error.message : error });
   }
 };
-
-export const metricController = async (
-  request: Request,
-  response: Response,
-) => {
-  try {
-    const user = request.user;
-    if (!user) return response.status(401).json({ message: "Unauthorized" });
-
-    const { attendanceId } = request.params;
-    if (!attendanceId)
-      return response.status(400).json({ message: "Missing param" });
-
-    const hours = await metrics(user.sub, attendanceId as string);
-
-    return response.status(200).json({ message: hours });
-  } catch (error) {
-    console.error(`Calculate controller failed ${error}`);
-    return response
-      .status(500)
-      .json({ message: error instanceof Error ? error.message : error });
-  }
-};
