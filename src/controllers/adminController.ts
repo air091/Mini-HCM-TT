@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
-import { getAllEmployees, getEmployee } from "../services/adminService.js";
+import {
+  getAllEmployees,
+  getEmployee,
+  updateEmployeePunches,
+} from "../services/adminService.js";
 
 export const getAllEmployeesController = async (
   request: Request,
@@ -39,6 +43,39 @@ export const getEmployeeController = async (
       .json({ message: "Employee fetched successful", employee });
   } catch (error) {
     console.log(`Get employee controller failed ${error}`);
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const updateEmployeePunchesController = async (
+  request: Request,
+  response: Response,
+) => {
+  try {
+    const user = request.user;
+    if (!user) return response.status(401).json({ message: "Unauthorized" });
+
+    const { attendanceId } = request.params;
+    const { timeIn, timeOut } = request.body;
+
+    if (!attendanceId)
+      return response.status(400).json({ message: "Missing params" });
+
+    const updatedAttendance = await updateEmployeePunches(
+      attendanceId as string,
+      timeIn,
+      timeOut,
+    );
+    return response
+      .status(200)
+      .json({
+        message: "Employee punch updated successfully",
+        attendance: updatedAttendance,
+      });
+  } catch (error) {
+    console.log(`Update employee punches controller failed ${error}`);
     return response.status(500).json({
       message: error instanceof Error ? error.message : "Internal server error",
     });

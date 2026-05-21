@@ -51,10 +51,10 @@ export const getEmployee = async (userId: string) => {
       return {
         id: doc.id,
         userId: attendanceData.userId,
-        timeIn: attendanceData.timeIn?.toDate() ?? null,
-        timeOut: attendanceData.timeOut?.toDate() ?? null,
+        timeIn: toDateSafe(attendanceData.timeIn),
+        timeOut: toDateSafe(attendanceData.timeOut),
         isComplete: attendanceData.isComplete,
-        date: attendanceData.date?.toDate() ?? null,
+        date: toDateSafe(attendanceData.date),
 
         metric: summary
           ? {
@@ -72,6 +72,43 @@ export const getEmployee = async (userId: string) => {
   );
 
   return attendances;
+};
+
+// update employee punches
+export const updateEmployeePunches = async (
+  attendanceId: string,
+  timeIn?: Date,
+  timeOut?: Date,
+) => {
+  const attendanceDoc = await db
+    .collection("attendance")
+    .doc(attendanceId)
+    .get();
+
+  if (!attendanceDoc.exists) {
+    throw new Error("Attendance not found");
+  }
+
+  const updates: Record<string, any> = {};
+
+  if (timeIn) {
+    updates.timeIn = timeIn;
+  }
+  if (timeOut) {
+    updates.timeOut = timeOut;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error("No updates provided");
+  }
+
+  await attendanceDoc.ref.update(updates);
+  const updatedDoc = await attendanceDoc.ref.get();
+
+  return {
+    id: updatedDoc.id,
+    ...updatedDoc.data(),
+  };
 };
 
 // admin can view daily reports of employees with all metrics
