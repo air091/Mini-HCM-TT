@@ -4,62 +4,45 @@ import { getAttendanceById } from "./attendanceService.js";
 export const metrics = async (userId: string, attendanceId: string) => {
   const userSnapshot = await db.collection("users").doc(userId).get();
   if (!userSnapshot.exists) throw new Error("User not found");
-  const data = userSnapshot.data();
 
+  const data = userSnapshot.data();
   const schedule = data?.schedule;
-  if (!schedule.start || !schedule.end)
-    throw new Error("User schedules are missing");
+
+  if (!schedule?.start || !schedule?.end) {
+    throw new Error("User schedule missing");
+  }
 
   const attendance = await getAttendanceById(attendanceId);
 
-  if (!attendance?.timeIn || !attendance?.timeOut)
+  if (!attendance?.timeIn || !attendance?.timeOut) {
     throw new Error("Incomplete attendance record");
+  }
 
-  const summary = await db
+  const timeIn = attendance.timeIn;
+  const timeOut = attendance.timeOut;
+  const start = schedule.start.toDate();
+  const end = schedule.end.toDate();
+
+  const summaryExists = await db
     .collection("dailySummary")
     .where("attendanceId", "==", attendanceId)
     .limit(1)
     .get();
 
-  if (!summary.empty) throw new Error("Already calculated");
+  if (!summaryExists.empty) {
+    throw new Error("Already calculated");
+  }
 
-  const regularHours = getTotalHours(
-    attendance.timeIn.toDate(),
-    attendance.timeOut.toDate(),
-    schedule.start.toDate(),
-    schedule.end.toDate(),
-  );
+  const totalHours = getTotalHours(timeIn, timeOut, start, end);
 
-  const totalHours = getTotalHours(
-    attendance.timeIn.toDate(),
-    attendance.timeOut.toDate(),
-    schedule.start.toDate(),
-    schedule.end.toDate(),
-  );
-
-  const nightDifferentialMins = getNightDifferentialMinutes(
-    attendance.timeIn.toDate(),
-    attendance.timeOut.toDate(),
-  );
-
-  const overtimeMins = getOvertimeMinutes(
-    schedule.end.toDate(),
-    attendance.timeOut.toDate(),
-  );
-
-  const lateMins = getLateMinutes(
-    schedule.start.toDate(),
-    attendance.timeIn.toDate(),
-  );
-
-  const earlyMins = getUnderTimeMinutes(
-    schedule.end.toDate(),
-    attendance.timeOut.toDate(),
-  );
+  const nightDifferentialMins = getNightDifferentialMinutes(timeIn, timeOut);
+  const overtimeMins = getOvertimeMinutes(end, timeOut);
+  const lateMins = getLateMinutes(start, timeIn);
+  const earlyMins = getUnderTimeMinutes(end, timeOut);
 
   const summaryRef = await db.collection("dailySummary").add({
-    attendanceId: attendance.id,
-    regularHrs: regularHours,
+    attendanceId,
+    regularHrs: totalHours,
     totalHrs: totalHours,
     overtimeMins,
     nightDifferentialMins,

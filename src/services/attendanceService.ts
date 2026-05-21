@@ -1,4 +1,6 @@
 import { db } from "../configs/firebase.js";
+import { toDateSafe } from "../libs/dateConverter.js";
+import { metrics } from "./calculationService.js";
 
 export const getAttendanceById = async (attendanceId: string) => {
   const attendanceSnapshot = await db
@@ -22,10 +24,10 @@ export const getAttendanceById = async (attendanceId: string) => {
   return {
     id: attendanceSnapshot.id,
     userId: d?.userId,
-    timeIn: d?.timeIn?.toDate() ?? null,
-    timeOut: d?.timeOut?.toDate() ?? null,
+    timeIn: toDateSafe(d?.timeIn),
+    timeOut: toDateSafe(d?.timeOut),
     isComplete: d?.isComplete,
-    date: d?.date?.toDate() ?? null,
+    date: toDateSafe(d?.date),
 
     metric: summary
       ? {
@@ -103,7 +105,7 @@ export const punchIn = async (userId: string) => {
     date: now,
     timeIn: now,
     userId: userId,
-    timeOut: null,
+    timeOut: false,
     isComplete: false,
   });
 
@@ -119,13 +121,21 @@ export const punchOut = async (userId: string) => {
   const activeAttendance = await db
     .collection("attendance")
     .where("userId", "==", userId)
-    .where("timeOut", "==", null)
+    .where("isComplete", "==", false)
     .limit(1)
     .get();
 
-  if (activeAttendance.empty) throw new Error("Active attendance not found");
+  if (activeAttendance.empty) {
+    throw new Error("No active attendance");
+  }
 
+  const doc = activeAttendance.docs[0];
   const now = new Date();
-  const endSnapshot = activeAttendance.docs[0];
-  return endSnapshot?.ref.update({ timeOut: now, isComplete: true });
+
+  await doc?.ref.update({
+    timeOut: now,
+    isComplete: true,
+  });
+
+  return await metrics(userId, doc?.id as string);
 };
