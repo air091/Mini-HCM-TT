@@ -14,9 +14,38 @@ export const getAttendanceById = async (attendanceId: string) => {
     .doc(attendanceId)
     .get();
 
+  if (!attendanceSnapshot.exists) throw new Error("No attendance found");
+
+  const d = attendanceSnapshot.data();
+
+  const dailySummarySnapshots = await db
+    .collection("dailySummary")
+    .where("attendanceId", "==", attendanceId)
+    .limit(1)
+    .get();
+
+  const summary = dailySummarySnapshots.docs[0]?.data();
+  const summaryId = dailySummarySnapshots.docs[0]?.id;
+
   return {
     id: attendanceSnapshot.id,
-    ...(attendanceSnapshot.data() as Omit<AttendanceType, "id">),
+    userId: d?.userId,
+    timeIn: d?.timeIn?.toDate() ?? null,
+    timeOut: d?.timeOut?.toDate() ?? null,
+    isComplete: d?.isComplete,
+    date: d?.date?.toDate() ?? null,
+
+    metric: summary
+      ? {
+          id: summaryId,
+          regularHrs: summary.regularHrs ?? 0,
+          totalHrs: summary.totalHrs ?? 0,
+          overtime: summary.overtimeMins ?? 0,
+          nightDifferential: summary.nightDifferentialMins ?? 0,
+          late: summary.lateMins ?? 0,
+          early: summary.earlyMins ?? 0,
+        }
+      : null,
   };
 };
 
