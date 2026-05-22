@@ -190,7 +190,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={submitting}
-            className="block w-full cursor-pointer bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full cursor-pointer bg-primary px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Creating account..." : "Register"}
           </button>

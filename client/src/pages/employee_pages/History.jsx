@@ -94,7 +94,7 @@ export default function History() {
 
                   return (
                     <tr key={attendance.id} className="border-t">
-                      <Td>{attendance.date || "-"}</Td>
+                      <Td>{formatDateOnly(attendance.date)}</Td>
                       <Td>{attendance.timeIn || "-"}</Td>
                       <Td>{attendance.timeOut || "-"}</Td>
                       <Td>
@@ -146,6 +146,12 @@ function getAttendanceTime(attendance) {
 
 function getErrorMessage(error, fallback) {
   return error?.response?.data?.message || fallback;
+}
+
+function formatDateOnly(value) {
+  if (!value) return "-";
+
+  return String(value).split(" ").at(0) || "-";
 }
 
 function formatHours(value) {

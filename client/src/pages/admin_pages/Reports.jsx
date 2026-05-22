@@ -261,7 +261,7 @@ function Td({ children }) {
 function getModeButtonClass(active) {
   return [
     "cursor-pointer px-3 py-2 text-sm",
-    active ? "bg-slate-900 text-white" : "hover:bg-slate-100",
+    active ? "bg-primary text-white" : "hover:bg-slate-100",
   ].join(" ");
 }
 

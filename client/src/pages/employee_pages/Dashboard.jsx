@@ -118,7 +118,7 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => handlePunch("in")}
                   disabled={Boolean(activeAttendance) || Boolean(actionLoading)}
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 bg-primary px-4 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <LogIn size={18} />
                   {actionLoading === "in" ? "Punching in..." : "Punch In"}
@@ -159,7 +159,10 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
-                <InfoTile label="Date" value={latestAttendance.date} />
+                <InfoTile
+                  label="Date"
+                  value={formatDateOnly(latestAttendance.date)}
+                />
                 <InfoTile label="Time In" value={latestAttendance.timeIn} />
                 <InfoTile label="Time Out" value={latestAttendance.timeOut} />
               </div>
@@ -215,6 +218,12 @@ function getAttendanceTime(attendance) {
 
 function getErrorMessage(error, fallback) {
   return error?.response?.data?.message || fallback;
+}
+
+function formatDateOnly(value) {
+  if (!value) return "-";
+
+  return String(value).split(" ").at(0) || "-";
 }
 
 function formatMetric(value) {
