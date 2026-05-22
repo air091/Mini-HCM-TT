@@ -9,10 +9,11 @@ import adminRouter from "./routes/adminRoute.js";
 dotenv.config();
 const app = express();
 const port = Number(process.env.PORT?.trim()) || 8888;
+const clientOrigin = process.env.CLIENT_ORIGIN?.trim() || "http://localhost:5173";
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: clientOrigin,
     credentials: true,
   }),
 );
