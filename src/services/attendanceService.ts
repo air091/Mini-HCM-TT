@@ -2,7 +2,7 @@ import { db } from "../configs/firebase.js";
 import { formatDate, toDateSafe } from "../libs/dateConverter.js";
 import { metrics } from "./calculationService.js";
 
-export const getAttendanceById = async (attendanceId: string) => {
+export const getAttendanceById = async (attendanceId: string, userId: string) => {
   const attendanceSnapshot = await db
     .collection("attendance")
     .doc(attendanceId)
@@ -11,6 +11,7 @@ export const getAttendanceById = async (attendanceId: string) => {
   if (!attendanceSnapshot.exists) throw new Error("No attendance found");
 
   const d = attendanceSnapshot.data();
+  if (d?.userId !== userId) throw new Error("Attendance not found");
 
   const dailySummarySnapshots = await db
     .collection("dailySummary")
@@ -33,7 +34,8 @@ export const getAttendanceById = async (attendanceId: string) => {
       ? {
           id: summaryId,
           regularHrs: summary.regularHrs ?? 0,
-          totalHrs: summary.totalHrs ?? 0,
+          totalHrs: summary.totalHrs ?? summary.workedHrs ?? 0,
+          workedHrs: summary.workedHrs ?? summary.totalHrs ?? 0,
           overtime: summary.overtimeMins ?? 0,
           nightDifferential: summary.nightDifferentialMins ?? 0,
           late: summary.lateMins ?? 0,
@@ -49,7 +51,7 @@ export const getAttendancesByUser = async (userId: string) => {
     .where("userId", "==", userId)
     .get();
 
-  if (attendanceSnapshots.empty) throw new Error("No attendance found");
+  if (attendanceSnapshots.empty) return [];
 
   const data = await Promise.all(
     attendanceSnapshots.docs.map(async (doc) => {
@@ -75,7 +77,8 @@ export const getAttendancesByUser = async (userId: string) => {
           ? {
               id: dailySummarySnapshots.docs[0]?.id,
               regularHrs: summary.regularHrs ?? 0,
-              totalHrs: summary.totalHrs ?? 0,
+              totalHrs: summary.totalHrs ?? summary.workedHrs ?? 0,
+              workedHrs: summary.workedHrs ?? summary.totalHrs ?? 0,
               overtime: summary.overtimeMins ?? 0,
               nightDifferential: summary.nightDifferentialMins ?? 0,
               late: summary.lateMins ?? 0,

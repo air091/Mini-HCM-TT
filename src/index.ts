@@ -8,7 +8,7 @@ import adminRouter from "./routes/adminRoute.js";
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT;
+const port = Number(process.env.PORT?.trim()) || 8888;
 
 app.use(
   cors({

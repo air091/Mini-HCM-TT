@@ -10,8 +10,18 @@ import {
 
 const router: Router = Router();
 
-router.get("/daily-report", authenticate, dailyReportController);
-router.get("/weekly-report", authenticate, weeklyReportController);
+router.get(
+  "/daily-report",
+  authenticate,
+  requireRole("admin"),
+  dailyReportController,
+);
+router.get(
+  "/weekly-report",
+  authenticate,
+  requireRole("admin"),
+  weeklyReportController,
+);
 router.get("/", authenticate, requireRole("admin"), getAllEmployeesController);
 router.get(
   "/:userId",
@@ -23,6 +33,7 @@ router.get(
 router.patch(
   "/:userId/attendance/:attendanceId/punches",
   authenticate,
+  requireRole("admin"),
   updateEmployeePunchesController,
 );
 

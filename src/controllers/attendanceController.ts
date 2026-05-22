@@ -5,7 +5,6 @@ import {
   punchIn,
   punchOut,
 } from "../services/attendanceService.js";
-import { metrics } from "../services/calculationService.js";
 
 export const getAttendancesController = async (
   request: Request,
@@ -35,7 +34,10 @@ export const getAttendanceByIdController = async (
 
     const { attendanceId } = request.params;
 
-    const attendance = await getAttendanceById(attendanceId as string);
+    const attendance = await getAttendanceById(
+      attendanceId as string,
+      user.sub,
+    );
     return response.status(200).json({ attendance });
   } catch (error) {
     console.error(`Attendace by ID controller failed ${error}`);
@@ -57,7 +59,7 @@ export const punchInController = async (
 
     return response
       .status(201)
-      .json({ message: "User punched in successully", punch });
+      .json({ message: "User punched in successfully", punch });
   } catch (error) {
     console.error(`Punch in controller failed ${error}`);
     return response
@@ -77,7 +79,7 @@ export const punchOutController = async (
 
     return response
       .status(201)
-      .json({ message: "User punched in successully", punch });
+      .json({ message: "User punched out successfully", punch });
   } catch (error) {
     console.error(`Punch out controller failed ${error}`);
     return response

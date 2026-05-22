@@ -22,6 +22,7 @@ export const login = async ({
   password,
 }: LoginCredentialType): Promise<AuthResponse> => {
   if (!email || !password) throw new Error("All fields are required");
+  email = email.trim().toLowerCase();
 
   const isEmailExist = await db
     .collection("users")
@@ -82,6 +83,12 @@ export const register = async ({
   if (!schedule?.start || !schedule?.end)
     throw new Error("Work schedule is required");
 
+  const normalizedRole = normalizeRole(email, role);
+  const normalizedSchedule = {
+    start: parseScheduleTime(schedule.start),
+    end: parseScheduleTime(schedule.end),
+  };
+
   const isEmailExist = await db
     .collection("users")
     .where("email", "==", email)
@@ -97,10 +104,10 @@ export const register = async ({
     email,
     password: hashedPassword,
     timeZone,
-    role,
+    role: normalizedRole,
     schedule: {
-      start: Timestamp.fromDate(new Date(schedule.start)),
-      end: Timestamp.fromDate(new Date(schedule.end)),
+      start: Timestamp.fromDate(normalizedSchedule.start),
+      end: Timestamp.fromDate(normalizedSchedule.end),
     },
   });
 
@@ -110,7 +117,7 @@ export const register = async ({
   const refreshToken = signRefreshToken({ sub: userId });
   const accessToken = signAccessToken({
     sub: userId,
-    role,
+    role: normalizedRole,
   });
 
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -204,3 +211,38 @@ export const refresh = async (token: string) => {
     newAccessToken,
   };
 };
+
+function normalizeRole(email: string, role?: string): string {
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((adminEmail) => adminEmail.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (role === "admin" && adminEmails.includes(email)) {
+    return "admin";
+  }
+
+  return "employee";
+}
+
+function parseScheduleTime(value: string | Date): Date {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) throw new Error("Invalid schedule time");
+    return value;
+  }
+
+  const trimmed = value.trim();
+  const timeOnly = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(trimmed);
+
+  if (timeOnly) {
+    const [, hour, minute] = timeOnly;
+    return new Date(1970, 0, 1, Number(hour), Number(minute), 0, 0);
+  }
+
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid schedule time. Use HH:mm, e.g. 09:00");
+  }
+
+  return date;
+}

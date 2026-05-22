@@ -3,7 +3,7 @@ import type { Response } from "express";
 
 dotenv.config();
 
-const isProduction: boolean = process.env.config === "production";
+const isProduction: boolean = process.env.NODE_ENV === "production";
 
 export function setRefreshTokenCookie(response: Response, token: string) {
   return response.cookie("refreshToken", token, {

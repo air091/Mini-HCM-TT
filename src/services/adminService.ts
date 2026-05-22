@@ -1,9 +1,5 @@
 import { db } from "../configs/firebase.js";
-import {
-  formatDate,
-  formatTimestamp,
-  toDateSafe,
-} from "../libs/dateConverter.js";
+import { formatDate, toDateSafe } from "../libs/dateConverter.js";
 import { recalculateMetrics } from "./calculationService.js";
 import { Timestamp } from "firebase-admin/firestore";
 // admin can view / edit punches
@@ -14,7 +10,7 @@ export const getAllEmployees = async () => {
     .where("role", "==", "employee")
     .get();
 
-  if (usersSnapshots.empty) throw new Error("No employees yet");
+  if (usersSnapshots.empty) return [];
 
   const users = usersSnapshots.docs.map((doc) => {
     const userData = doc.data();
@@ -37,12 +33,15 @@ export const getEmployee = async (userId: string) => {
   const userDoc = await db.collection("users").doc(userId).get();
   if (!userDoc.exists) throw new Error("Employee not found");
 
+  const userData = userDoc.data();
+  if (userData?.role !== "employee") throw new Error("Employee not found");
+
   const attendanceSnapshots = await db
     .collection("attendance")
     .where("userId", "==", userDoc.id)
     .get();
 
-  if (attendanceSnapshots.empty) throw new Error("No attendance yet");
+  const { password, ...employeeData } = userData;
 
   const attendances = await Promise.all(
     attendanceSnapshots.docs.map(async (doc) => {
@@ -66,7 +65,8 @@ export const getEmployee = async (userId: string) => {
           ? {
               id: summarySnapshots.docs[0]?.id,
               regularHrs: summary.regularHrs ?? 0,
-              totalHrs: summary.totalHrs ?? 0,
+              totalHrs: summary.totalHrs ?? summary.workedHrs ?? 0,
+              workedHrs: summary.workedHrs ?? summary.totalHrs ?? 0,
               overtime: summary.overtimeMins ?? 0,
               nightDifferential: summary.nightDifferentialMins ?? 0,
               late: summary.lateMins ?? 0,
@@ -77,7 +77,15 @@ export const getEmployee = async (userId: string) => {
     }),
   );
 
-  return attendances;
+  return {
+    id: userDoc.id,
+    ...employeeData,
+    schedule: {
+      start: toDateSafe(employeeData.schedule.start),
+      end: toDateSafe(employeeData.schedule.end),
+    },
+    attendances,
+  };
 };
 
 // update employee punches
@@ -96,10 +104,14 @@ export const updateEmployeePunches = async (
     throw new Error("Attendance not found");
   }
 
+  if (attendanceDoc.data()?.userId !== userId) {
+    throw new Error("Attendance does not belong to this employee");
+  }
+
   const updates: Record<string, any> = {};
 
-  if (timeIn) updates.timeIn = Timestamp.fromDate(timeIn);
-  if (timeOut) updates.timeOut = Timestamp.fromDate(timeOut);
+  if (timeIn) updates.timeIn = Timestamp.fromDate(assertValidDate(timeIn));
+  if (timeOut) updates.timeOut = Timestamp.fromDate(assertValidDate(timeOut));
 
   if (Object.keys(updates).length === 0) {
     throw new Error("No updates provided");
@@ -145,7 +157,7 @@ export const getDailyEmployeeReports = async (dateQuery: string) => {
     .where("date", "<", end)
     .get();
 
-  if (attendanceSnapshot.empty) throw new Error("No reports");
+  if (attendanceSnapshot.empty) return [];
 
   return await Promise.all(
     attendanceSnapshot.docs.map(async (doc) => {
@@ -170,7 +182,8 @@ export const getDailyEmployeeReports = async (dateQuery: string) => {
           ? {
               id: summarySnapshot.docs[0]?.id,
               regularHrs: summary.regularHrs ?? 0,
-              totalHrs: summary.totalHrs ?? 0,
+              totalHrs: summary.totalHrs ?? summary.workedHrs ?? 0,
+              workedHrs: summary.workedHrs ?? summary.totalHrs ?? 0,
               overtime: summary.overtimeMins ?? 0,
               nightDifferential: summary.nightDifferentialMins ?? 0,
               late: summary.lateMins ?? 0,
@@ -220,7 +233,7 @@ export const getWeeklyEmployeeReports = async (dateQuery: string) => {
     .where("date", "<", end)
     .get();
 
-  if (attendanceSnapshot.empty) throw new Error("No reports");
+  if (attendanceSnapshot.empty) return [];
 
   return await Promise.all(
     attendanceSnapshot.docs.map(async (doc) => {
@@ -245,7 +258,8 @@ export const getWeeklyEmployeeReports = async (dateQuery: string) => {
           ? {
               id: summarySnapshot.docs[0]?.id,
               regularHrs: summary.regularHrs ?? 0,
-              totalHrs: summary.totalHrs ?? 0,
+              totalHrs: summary.totalHrs ?? summary.workedHrs ?? 0,
+              workedHrs: summary.workedHrs ?? summary.totalHrs ?? 0,
               overtime: summary.overtimeMins ?? 0,
               nightDifferential: summary.nightDifferentialMins ?? 0,
               late: summary.lateMins ?? 0,
@@ -256,3 +270,11 @@ export const getWeeklyEmployeeReports = async (dateQuery: string) => {
     }),
   );
 };
+
+function assertValidDate(date: Date): Date {
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid punch time");
+  }
+
+  return date;
+}

@@ -64,6 +64,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
   const summaryRef = await db.collection("dailySummary").add({
     attendanceId,
     regularHrs: regularHours,
+    totalHrs: workedHours,
     workedHrs: workedHours,
     overtimeMins,
     nightDifferentialMins,
