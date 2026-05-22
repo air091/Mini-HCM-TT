@@ -47,7 +47,7 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-[420px] border bg-white px-5 py-6">
+      <div className="w-full max-w-105 border bg-white px-5 py-6">
         <header className="mb-4">
           <p className="text-sm font-semibold text-slate-500">Mini HCM</p>
           <h1 className="text-xl font-semibold">Login your account</h1>

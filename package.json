@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "build": "pnpm --dir client install --prod=false && pnpm --dir client run build",
+    "build": "npm --prefix client install --include=dev && npm --prefix client run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "tsx --watch src/index.ts",
     "start": "tsx src/index.ts"
