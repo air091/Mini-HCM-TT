@@ -9,6 +9,10 @@ The project will be built in Node.js (Express), Firebase (Firestore), and React.
 
 The minimum viable product of this project is where employees can record working hours through punch in/out, and admins can manage and review all time records.
 
+# URL
+
+https://mini-hcm-timetrack.onrender.com
+
 # CREDENTIALS
 
 # ADMIN
