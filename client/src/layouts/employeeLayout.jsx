@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import EmployeeSidebar from "../components/EmployeeSidebar";
 import { useAuth } from "../hooks/useAuth";
@@ -6,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 export default function EmployeeLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleLogout = async () => {
     await logout();
@@ -14,20 +16,45 @@ export default function EmployeeLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-white p-4 md:block">
-        <div className="mb-6">
-          <p className="text-sm font-semibold">Mini HCM</p>
-          <p className="text-xs text-slate-500">Employee</p>
-        </div>
+      {isSidebarOpen && (
+        <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-white p-4 md:block">
+          <div className="mb-6">
+            <p className="text-sm font-semibold">Mini HCM</p>
+            <p className="text-xs text-slate-500">Employee</p>
+          </div>
 
-        <EmployeeSidebar />
-      </aside>
+          <EmployeeSidebar />
+        </aside>
+      )}
 
-      <div className="min-h-screen md:pl-64">
+      <div
+        className={[
+          "min-h-screen transition-[padding]",
+          isSidebarOpen ? "md:pl-64" : "",
+        ].join(" ")}
+      >
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold">{user?.name || "Employee"}</p>
-            <p className="text-xs text-slate-500">{user?.email}</p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen((value) => !value)}
+              className="inline-flex cursor-pointer items-center justify-center p-2 hover:bg-slate-100"
+              aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            >
+              {isSidebarOpen ? (
+                <PanelLeftClose size={18} />
+              ) : (
+                <PanelLeftOpen size={18} />
+              )}
+            </button>
+
+            <div>
+              <p className="text-sm font-semibold">
+                {user?.name || "Employee"}
+              </p>
+              <p className="text-xs text-slate-500">{user?.email}</p>
+            </div>
           </div>
 
           <button
@@ -40,9 +67,11 @@ export default function EmployeeLayout() {
           </button>
         </header>
 
-        <div className="border-b bg-white p-2 md:hidden">
-          <EmployeeSidebar />
-        </div>
+        {isSidebarOpen && (
+          <div className="border-b bg-white p-2 md:hidden">
+            <EmployeeSidebar />
+          </div>
+        )}
 
         <main className="p-4">
           <Outlet />

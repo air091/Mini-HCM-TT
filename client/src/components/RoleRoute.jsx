@@ -1,12 +1,13 @@
 import { useAuth } from "../hooks/useAuth";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { getDashboardPath } from "../lib/auth";
+import LoadingScreen from "./LoadingScreen";
 
 export default function RoleRoute({ allowedRoles }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingScreen />;
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />;

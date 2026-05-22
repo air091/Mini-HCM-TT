@@ -3,6 +3,7 @@ import { Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { getDashboardPath } from "../lib/auth";
+import LoadingScreen from "../components/LoadingScreen";
 
 export default function Register() {
   const { register, error, user, loading } = useAuth();
@@ -11,7 +12,7 @@ export default function Register() {
   const [registerCredentials, setRegisterCredentials] = useState({
     name: "",
     email: "",
-    timeZone: "asia/manila",
+    timeZone: "Asia/Manila",
     role: "employee",
     schedule: {
       start: "",
@@ -64,24 +65,26 @@ export default function Register() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingScreen />;
   if (user) return <Navigate to={getDashboardPath(user.role)} replace />;
 
   return (
-    <div className="h-screen flex items-center justify-center">
-      <div className="border px-3 py-5 w-full max-w-[520px]">
-        <h1 className="text-[20px]">Register your account</h1>
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
+      <div className="w-full max-w-[540px] border bg-white px-5 py-6">
+        <header className="mb-4">
+          <p className="text-sm font-semibold text-slate-500">Mini HCM</p>
+          <h1 className="text-xl font-semibold">Register your account</h1>
+        </header>
 
-        <form onSubmit={handleOnSubmit}>
+        <form onSubmit={handleOnSubmit} className="space-y-3">
           {(error || formError) && (
-            <p className="py-1 px-2 border border-red-500 bg-red-100 mt-2 text-[14px]">
+            <p className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
               {formError || error}
             </p>
           )}
 
-          {/* NAME */}
-          <label className="mt-2 block">
-            <span>Name</span>
+          <label className="block">
+            <span className="text-sm font-medium">Name</span>
             <input
               type="text"
               name="name"
@@ -89,13 +92,12 @@ export default function Register() {
               onChange={handleOnChange}
               autoComplete="off"
               required
-              className="block border px-2 py-1 w-full"
+              className="mt-1 block w-full border px-3 py-2 text-sm"
             />
           </label>
 
-          {/* EMAIL */}
-          <label className="mt-2 block">
-            <span>Email</span>
+          <label className="block">
+            <span className="text-sm font-medium">Email</span>
             <input
               type="email"
               name="email"
@@ -103,30 +105,28 @@ export default function Register() {
               onChange={handleOnChange}
               autoComplete="off"
               required
-              className="block border px-2 py-1 w-full"
+              className="mt-1 block w-full border px-3 py-2 text-sm"
             />
           </label>
 
-          {/* TIMEZONE */}
-          <label className="mt-2 flex justify-between">
-            <span>Timezone</span>
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium">Timezone</span>
             <select
               name="timeZone"
               value={registerCredentials.timeZone}
               onChange={handleOnChange}
-              className="border px-2 py-1"
+              className="border px-3 py-2 text-sm"
             >
               <option value="Asia/Manila">Asia/Manila</option>
             </select>
           </label>
 
-          {/* SCHEDULE */}
-          <div className="mt-2">
-            <span className="block">Schedule</span>
+          <div>
+            <span className="block text-sm font-medium">Schedule</span>
 
-            <div className="flex gap-2">
+            <div className="mt-1 flex gap-2">
               <div className="w-full">
-                <span className="block">Start</span>
+                <span className="block text-xs text-slate-500">Start</span>
                 <input
                   type="time"
                   value={registerCredentials.schedule.start}
@@ -134,49 +134,48 @@ export default function Register() {
                     handleScheduleChange("start", e.target.value)
                   }
                   required
-                  className="border block px-2 py-1 w-full"
+                  className="block w-full border px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="w-full">
-                <span className="block">End</span>
+                <span className="block text-xs text-slate-500">End</span>
                 <input
                   type="time"
                   value={registerCredentials.schedule.end}
                   onChange={(e) => handleScheduleChange("end", e.target.value)}
                   required
-                  className="border px-2 py-1 w-full"
+                  className="w-full border px-3 py-2 text-sm"
                 />
               </div>
             </div>
           </div>
 
-          {/* PASSWORD */}
-          <label className="mt-2 block">
-            <span>Password</span>
+          <label className="block">
+            <span className="text-sm font-medium">Password</span>
 
-            <div className="relative border">
+            <div className="relative mt-1 border">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 value={registerCredentials.password}
                 onChange={handleOnChange}
                 required
-                className="block px-2 py-1 w-full"
+                className="block w-full px-3 py-2 pr-10 text-sm"
               />
 
-              <div
-                className="absolute right-0 top-0 h-full flex items-center px-2 cursor-pointer"
+              <button
+                type="button"
+                className="absolute right-0 top-0 flex h-full cursor-pointer items-center px-3"
                 onClick={() => setShowPassword((p) => !p)}
               >
                 {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
-              </div>
+              </button>
             </div>
           </label>
 
-          {/* CONFIRM PASSWORD */}
-          <label className="mt-2 block">
-            <span>Confirm password</span>
+          <label className="block">
+            <span className="text-sm font-medium">Confirm password</span>
 
             <input
               type={showPassword ? "text" : "password"}
@@ -184,21 +183,21 @@ export default function Register() {
               value={registerCredentials.confirmPassword}
               onChange={handleOnChange}
               required
-              className="block border px-2 py-1 w-full"
+              className="mt-1 block w-full border px-3 py-2 text-sm"
             />
           </label>
 
           <button
             type="submit"
             disabled={submitting}
-            className="cursor-pointer block border px-4 mt-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full cursor-pointer bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Creating account..." : "Register"}
           </button>
 
-          <p className="mt-3 text-[14px]">
+          <p className="text-sm text-slate-600">
             Already have an account?{" "}
-            <Link to="/login" className="underline">
+            <Link to="/login" className="font-medium underline">
               Login
             </Link>
           </p>

@@ -181,7 +181,7 @@ export default function EmployeeDetail() {
 
                       return (
                         <tr key={attendance.id} className="border-t align-top">
-                          <Td>{formatDateTime(attendance.date)}</Td>
+                          <Td>{formatDateOnly(attendance.date)}</Td>
                           <Td>
                             {isEditing ? (
                               <DateTimeInput
@@ -331,23 +331,40 @@ function formatDateTime(value) {
   const date = parseDate(value);
   if (!date) return "-";
 
-  return date.toLocaleString([], {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return `${formatNumericDate(date)} ${formatClockTime(date)}`;
+}
+
+function formatDateOnly(value) {
+  const date = parseDate(value);
+  if (!date) return "-";
+
+  return formatNumericDate(date);
 }
 
 function formatTime(value) {
   const date = parseDate(value);
   if (!date) return "-";
 
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatClockTime(date);
+}
+
+function formatNumericDate(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+
+  return `${month}/${day}/${year}`;
+}
+
+function formatClockTime(date) {
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const period = hours >= 12 ? "PM" : "AM";
+
+  hours %= 12;
+  hours = hours || 12;
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${period}`;
 }
 
 function toDateTimeLocalValue(value) {

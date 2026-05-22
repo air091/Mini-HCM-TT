@@ -3,6 +3,7 @@ import { Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { getDashboardPath } from "../lib/auth";
+import LoadingScreen from "../components/LoadingScreen";
 
 export default function Login() {
   const { login, error, user, loading } = useAuth();
@@ -41,24 +42,25 @@ export default function Login() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingScreen />;
   if (user) return <Navigate to={getDashboardPath(user.role)} replace />;
 
   return (
-    <div className="h-screen flex items-center justify-center">
-      <div className="border px-3 py-5 w-full max-w-[420px]">
-        <header>
-          <h1 className="text-[20px]">Login your account</h1>
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-[420px] border bg-white px-5 py-6">
+        <header className="mb-4">
+          <p className="text-sm font-semibold text-slate-500">Mini HCM</p>
+          <h1 className="text-xl font-semibold">Login your account</h1>
         </header>
 
-        <form onSubmit={handleOnSubmit} className="">
+        <form onSubmit={handleOnSubmit} className="space-y-3">
           {error && (
-            <p className="py-1 px-2 border border-red-500 bg-red-100 mt-2 text-[14px]">
+            <p className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </p>
           )}
-          <label className="mt-2">
-            <span>Email</span>
+          <label className="block">
+            <span className="text-sm font-medium">Email</span>
             <input
               type="email"
               name="email"
@@ -66,14 +68,14 @@ export default function Login() {
               value={loginCredentials.email}
               onChange={handleOnChange}
               required
-              className="block border px-2 py-1 w-full"
+              className="mt-1 block w-full border px-3 py-2 text-sm"
             />
           </label>
 
-          <label className="mt-2">
-            <span>Password</span>
+          <label className="block">
+            <span className="text-sm font-medium">Password</span>
 
-            <div className="relative border">
+            <div className="relative mt-1 border">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -81,28 +83,29 @@ export default function Login() {
                 value={loginCredentials.password}
                 onChange={handleOnChange}
                 required
-                className="block px-2 py-1 w-full"
+                className="block w-full px-3 py-2 pr-10 text-sm"
               />
 
-              <div
-                className="absolute right-0 top-0 h-full flex items-center px-2 cursor-pointer"
+              <button
+                type="button"
+                className="absolute right-0 top-0 flex h-full cursor-pointer items-center px-3"
                 onClick={() => setShowPassword((prev) => !prev)}
               >
                 {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
-              </div>
+              </button>
             </div>
           </label>
           <button
             type="submit"
             disabled={submitting}
-            className="cursor-pointer block border px-4 mt-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full cursor-pointer bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Logging in..." : "Login"}
           </button>
 
-          <p className="mt-3 text-[14px]">
+          <p className="text-sm text-slate-600">
             No account yet?{" "}
-            <Link to="/register" className="underline">
+            <Link to="/register" className="font-medium underline">
               Register
             </Link>
           </p>
