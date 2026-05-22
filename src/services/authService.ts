@@ -41,7 +41,10 @@ export const login = async ({
   // create token
   const refreshToken = signRefreshToken({ sub: userDoc.id });
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-  const accessToken = signAccessToken({ sub: userDoc.id });
+  const accessToken = signAccessToken({
+    sub: userDoc.id,
+    role: userDoc.data().role,
+  });
 
   const now = new Date();
 
@@ -76,7 +79,7 @@ export const register = async ({
   if (!name || !email || !password || !timeZone)
     throw new Error("All fields are required");
 
-  if (!schedule || !schedule.start || !schedule.end)
+  if (!schedule?.start || !schedule?.end)
     throw new Error("Work schedule is required");
 
   const isEmailExist = await db
@@ -88,6 +91,7 @@ export const register = async ({
   if (!isEmailExist.empty) throw new Error("Email already exists");
 
   const hashedPassword = await bcrypt.hash(password, 10);
+
   const userRef = await db.collection("users").add({
     name,
     email,
@@ -96,17 +100,25 @@ export const register = async ({
     role,
     schedule,
   });
-  const userId = userRef.id;
-  const refreshToken = signRefreshToken({ sub: userId });
-  // hash refresh token
-  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-  const accessToken = signAccessToken({ sub: userId });
 
-  // store refresh token to db
+  const userId = userRef.id;
+
+  // tokens
+  const refreshToken = signRefreshToken({ sub: userId });
+  const accessToken = signAccessToken({
+    sub: userId,
+    role,
+  });
+
+  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
   await db.collection("refreshTokens").add({
-    userId: userId,
+    userId,
     hashedToken: hashedRefreshToken,
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), // 3days
+    revokedAt: null,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
   return {
@@ -141,6 +153,7 @@ export const refresh = async (token: string) => {
   const payload = verifyRefreshToken(token);
 
   const userId = payload.sub;
+  const user = await profile(userId);
 
   const userDoc = await db.collection("users").doc(userId).get();
   if (!userDoc.exists) throw new Error("No user found");
@@ -168,7 +181,7 @@ export const refresh = async (token: string) => {
 
   // generate new tokens
   const newRefreshToken = signRefreshToken({ sub: userId });
-  const newAccessToken = signAccessToken({ sub: userId });
+  const newAccessToken = signAccessToken({ sub: userId, role: user.role });
 
   const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
 

@@ -22,6 +22,7 @@ type RefreshPayload = JwtPayload & {
 
 export type AccessPayload = JwtPayload & {
   sub: string;
+  role: string;
 };
 
 // options
