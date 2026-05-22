@@ -1,6 +1,7 @@
 import { db } from "../configs/firebase.js";
-import { toDateSafe } from "../libs/dateConverter.js";
-
+import { formatTimestamp, toDateSafe } from "../libs/dateConverter.js";
+import { metrics, recalculateMetrics } from "./calculationService.js";
+import { Timestamp } from "firebase-admin/firestore";
 // admin can view / edit punches
 // get employees
 export const getAllEmployees = async () => {
@@ -77,6 +78,7 @@ export const getEmployee = async (userId: string) => {
 
 // update employee punches
 export const updateEmployeePunches = async (
+  userId: string,
   attendanceId: string,
   timeIn?: Date,
   timeOut?: Date,
@@ -92,12 +94,8 @@ export const updateEmployeePunches = async (
 
   const updates: Record<string, any> = {};
 
-  if (timeIn) {
-    updates.timeIn = timeIn;
-  }
-  if (timeOut) {
-    updates.timeOut = timeOut;
-  }
+  if (timeIn) updates.timeIn = Timestamp.fromDate(timeIn);
+  if (timeOut) updates.timeOut = Timestamp.fromDate(timeOut);
 
   if (Object.keys(updates).length === 0) {
     throw new Error("No updates provided");
@@ -106,9 +104,14 @@ export const updateEmployeePunches = async (
   await attendanceDoc.ref.update(updates);
   const updatedDoc = await attendanceDoc.ref.get();
 
+  // Recalculate metrics after punch update
+  await recalculateMetrics(userId, attendanceId);
+  const data = updatedDoc.data();
   return {
     id: updatedDoc.id,
-    ...updatedDoc.data(),
+    ...data,
+    timeIn: formatTimestamp(data?.timeIn),
+    timeOut: formatTimestamp(data?.timeOut),
   };
 };
 

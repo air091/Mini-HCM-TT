@@ -21,13 +21,21 @@ export const getAttendanceById = async (attendanceId: string) => {
   const summary = dailySummarySnapshots.docs[0]?.data();
   const summaryId = dailySummarySnapshots.docs[0]?.id;
 
+  const toDate = (value: any): Date | null => {
+    if (!value) return null;
+    if (value?.toDate) return value.toDate(); // Firestore Timestamp
+    if (value instanceof Date) return value; // already a Date
+    if (typeof value === "string") return new Date(value); // string fallback
+    return null;
+  };
+
   return {
     id: attendanceSnapshot.id,
     userId: d?.userId,
-    timeIn: toDateSafe(d?.timeIn),
-    timeOut: toDateSafe(d?.timeOut),
+    timeIn: toDate(d?.timeIn),
+    timeOut: toDate(d?.timeOut),
     isComplete: d?.isComplete,
-    date: toDateSafe(d?.date),
+    date: toDate(d?.date),
 
     metric: summary
       ? {

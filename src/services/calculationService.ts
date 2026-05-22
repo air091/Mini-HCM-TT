@@ -20,8 +20,23 @@ export const metrics = async (userId: string, attendanceId: string) => {
 
   const timeIn = attendance.timeIn;
   const timeOut = attendance.timeOut;
-  const start = schedule.start.toDate();
-  const end = schedule.end.toDate();
+
+  if (!(timeIn instanceof Date) || !(timeOut instanceof Date)) {
+    throw new Error("Invalid timeIn or timeOut");
+  }
+
+  const shiftStartRaw = schedule.start.toDate();
+  const shiftEndRaw = schedule.end.toDate();
+
+  const start = new Date(timeIn);
+  start.setHours(shiftStartRaw.getHours(), shiftStartRaw.getMinutes(), 0, 0);
+
+  const end = new Date(timeIn);
+  end.setHours(shiftEndRaw.getHours(), shiftEndRaw.getMinutes(), 0, 0);
+
+  if (end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
 
   const summaryExists = await db
     .collection("dailySummary")
@@ -34,7 +49,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
   }
 
   const totalHours = getTotalHours(timeIn, timeOut, start, end);
-
+  const workedHours = getWorkedHours(timeIn, timeOut, start);
   const nightDifferentialMins = getNightDifferentialMinutes(timeIn, timeOut);
   const overtimeMins = getOvertimeMinutes(end, timeOut);
   const lateMins = getLateMinutes(start, timeIn);
@@ -43,7 +58,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
   const summaryRef = await db.collection("dailySummary").add({
     attendanceId,
     regularHrs: totalHours,
-    totalHrs: totalHours,
+    workedHrs: workedHours,
     overtimeMins,
     nightDifferentialMins,
     lateMins,
@@ -58,16 +73,53 @@ export const metrics = async (userId: string, attendanceId: string) => {
   };
 };
 
+export const recalculateMetrics = async (
+  userId: string,
+  attendanceId: string,
+) => {
+  // Delete existing summary so metrics() doesn't throw "Already calculated"
+  const existingSummary = await db
+    .collection("dailySummary")
+    .where("attendanceId", "==", attendanceId)
+    .limit(1)
+    .get();
+
+  if (!existingSummary.empty) {
+    await existingSummary.docs[0]?.ref.delete();
+  }
+
+  return metrics(userId, attendanceId);
+};
+
+function getWorkedHours(timeIn: Date, timeOut: Date, startShift: Date): number {
+  const BREAKTIME = 1;
+
+  // clamp ONLY start
+  const effectiveStart = new Date(
+    Math.max(timeIn.getTime(), startShift.getTime()),
+  );
+
+  const effectiveEnd = timeOut; // no clamp
+
+  if (effectiveEnd <= effectiveStart) return 0;
+
+  const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  const workedHours = Math.max(diffHours - BREAKTIME, 0);
+
+  return Math.round(workedHours * 100) / 100;
+}
+
 function getTotalHours(
   timeIn: Date,
   timeOut: Date,
   startShift: Date,
   endShift: Date,
 ): number {
-  const BREAKTIME = 1;
-  const MAX_HOURS = 8;
+  const BREAK_HOURS = 1;
 
-  // clamp to schedule window
+  // clamp attendance within shift
   const effectiveStart = new Date(
     Math.max(timeIn.getTime(), startShift.getTime()),
   );
@@ -76,14 +128,17 @@ function getTotalHours(
     Math.min(timeOut.getTime(), endShift.getTime()),
   );
 
+  // invalid range
+  if (effectiveEnd <= effectiveStart) return 0;
+
   const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
 
-  const total = Math.min(Math.max(diffHours - BREAKTIME, 0), MAX_HOURS);
+  // deduct break only if long enough
+  const workedHours = diffHours >= 5 ? diffHours - BREAK_HOURS : diffHours;
 
-  return Math.round(total * 100) / 100;
+  return Math.round(workedHours * 100) / 100;
 }
-
 function getLateMinutes(startShift: Date, timeIn: Date): number {
   // check schedule start and punched in
   const late = Math.max(

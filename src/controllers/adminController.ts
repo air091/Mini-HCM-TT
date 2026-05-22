@@ -59,16 +59,17 @@ export const updateEmployeePunchesController = async (
     const user = request.user;
     if (!user) return response.status(401).json({ message: "Unauthorized" });
 
-    const { attendanceId } = request.params;
+    const { userId, attendanceId } = request.params;
     const { timeIn, timeOut } = request.body;
 
     if (!attendanceId)
       return response.status(400).json({ message: "Missing params" });
 
     const updatedAttendance = await updateEmployeePunches(
+      userId as string,
       attendanceId as string,
-      timeIn,
-      timeOut,
+      timeIn ? new Date(timeIn) : undefined,
+      timeOut ? new Date(timeOut) : undefined,
     );
     return response.status(200).json({
       message: "Employee punch updated successfully",

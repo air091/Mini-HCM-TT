@@ -16,7 +16,7 @@ router.get("/", authenticate, getAllEmployeesController);
 router.get("/:userId", authenticate, getEmployeeController);
 
 router.patch(
-  "/attendance/:attendanceId/punches",
+  "/:userId/attendance/:attendanceId/punches",
   authenticate,
   updateEmployeePunchesController,
 );
