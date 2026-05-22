@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate } from "../middlewares/authMiddleware.js";
+import { authenticate, requireRole } from "../middlewares/authMiddleware.js";
 import {
   dailyReportController,
   getAllEmployeesController,
@@ -12,8 +12,13 @@ const router: Router = Router();
 
 router.get("/daily-report", authenticate, dailyReportController);
 router.get("/weekly-report", authenticate, weeklyReportController);
-router.get("/", authenticate, getAllEmployeesController);
-router.get("/:userId", authenticate, getEmployeeController);
+router.get("/", authenticate, requireRole("admin"), getAllEmployeesController);
+router.get(
+  "/:userId",
+  authenticate,
+  requireRole("admin"),
+  getEmployeeController,
+);
 
 router.patch(
   "/:userId/attendance/:attendanceId/punches",
