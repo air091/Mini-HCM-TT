@@ -14,8 +14,11 @@ The minimum viable product of this project is where employees can record working
 # ADMIN
 
 email: email1@ex.com
-email: ace243@gmail.com
-email: spark@gmail.com
-email: letwi23@gmail.com
+
+# EMPLOYEE
+
+email: ace243@gmail.com <br>
+email: spark@gmail.com <br>
+email: letwi23@gmail.com <br>
 
 all user password: 1234
