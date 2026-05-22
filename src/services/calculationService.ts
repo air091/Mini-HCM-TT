@@ -54,8 +54,9 @@ export const metrics = async (userId: string, attendanceId: string) => {
     throw new Error("Already calculated");
   }
 
-  const regularHours = getRegularHours(start, end);
-  const workedHours = getWorkedHours(timeIn, timeOut, start);
+  const regularHoursLimit = getRegularHoursLimit(start, end);
+  const workedHours = getWorkedHours(timeIn, timeOut, start, regularHoursLimit);
+  const regularHours = Math.min(workedHours, regularHoursLimit);
   const nightDifferentialMins = getNightDifferentialMinutes(timeIn, timeOut);
   const overtimeMins = getOvertimeMinutes(end, timeOut);
   const lateMins = getLateMinutes(start, timeIn);
@@ -98,9 +99,15 @@ export const recalculateMetrics = async (
   return metrics(userId, attendanceId);
 };
 
-function getWorkedHours(timeIn: Date, timeOut: Date, startShift: Date): number {
-  const BREAKTIME = 1;
+const BREAK_HOURS = 1;
+const MAX_REGULAR_HOURS = 8;
 
+function getWorkedHours(
+  timeIn: Date,
+  timeOut: Date,
+  startShift: Date,
+  regularHoursLimit: number,
+): number {
   // clamp ONLY start
   const effectiveStart = new Date(
     Math.max(timeIn.getTime(), startShift.getTime()),
@@ -112,17 +119,20 @@ function getWorkedHours(timeIn: Date, timeOut: Date, startShift: Date): number {
 
   const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
+  const breakHours = diffHours > regularHoursLimit ? BREAK_HOURS : 0;
 
-  const workedHours = Math.max(diffHours - BREAKTIME, 0);
+  const workedHours = Math.max(diffHours - breakHours, 0);
 
   return Math.round(workedHours * 100) / 100;
 }
 
-function getRegularHours(startShift: Date, endShift: Date): number {
-  const BREAK_HOURS = 1;
+function getRegularHoursLimit(startShift: Date, endShift: Date): number {
   const diffMs = endShift.getTime() - startShift.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
-  return Math.max(diffHours - BREAK_HOURS, 0);
+  const breakHours = diffHours > MAX_REGULAR_HOURS ? BREAK_HOURS : 0;
+  const regularLimit = Math.max(diffHours - breakHours, 0);
+
+  return Math.min(regularLimit, MAX_REGULAR_HOURS);
 }
 
 function getLateMinutes(startShift: Date, timeIn: Date): number {
