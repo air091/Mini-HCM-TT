@@ -11,13 +11,28 @@ import adminRouter from "./routes/adminRoute.js";
 dotenv.config();
 const app = express();
 const port = Number(process.env.PORT?.trim()) || 8888;
-const clientOrigin = process.env.CLIENT_ORIGIN?.trim() || "http://localhost:5173";
+const defaultClientOrigins = ["http://localhost:5173"];
+const configuredClientOrigins =
+  process.env.CLIENT_ORIGIN?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [];
+const allowedClientOrigins = new Set([
+  ...defaultClientOrigins,
+  ...configuredClientOrigins,
+]);
 const clientBuildPath = path.resolve(process.cwd(), "client", "dist");
 const clientIndexPath = path.join(clientBuildPath, "index.html");
 
 app.use(
   cors({
-    origin: clientOrigin,
+    origin(origin, callback) {
+      if (!origin || allowedClientOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin is not allowed by CORS"));
+    },
     credentials: true,
   }),
 );

@@ -26,7 +26,6 @@ export default function Reports() {
 
         totals.records += 1;
         totals.regularHrs += Number(metric.regularHrs || 0);
-        totals.workedHrs += Number(metric.workedHrs ?? metric.totalHrs ?? 0);
         totals.overtime += Number(metric.overtime || 0);
         totals.nightDifferential += Number(metric.nightDifferential || 0);
         totals.late += Number(metric.late || 0);
@@ -37,7 +36,6 @@ export default function Reports() {
       {
         records: 0,
         regularHrs: 0,
-        workedHrs: 0,
         overtime: 0,
         nightDifferential: 0,
         late: 0,
@@ -145,10 +143,9 @@ export default function Reports() {
         </p>
       )}
 
-      <section className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
         <InfoTile label="Records" value={summary.records} />
         <InfoTile label="Regular" value={formatHours(summary.regularHrs)} />
-        <InfoTile label="Worked" value={formatHours(summary.workedHrs)} />
         <InfoTile label="OT" value={formatMinutes(summary.overtime)} />
         <InfoTile
           label="Night Diff"
@@ -167,7 +164,7 @@ export default function Reports() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
               <thead className="bg-slate-100 text-xs uppercase text-slate-600">
                 <tr>
                   <Th>Employee</Th>
@@ -176,7 +173,6 @@ export default function Reports() {
                   <Th>Time Out</Th>
                   <Th>Status</Th>
                   <Th>Regular</Th>
-                  <Th>Worked</Th>
                   <Th>OT</Th>
                   <Th>ND</Th>
                   <Th>Late</Th>
@@ -211,7 +207,6 @@ export default function Reports() {
                         <StatusBadge complete={report.isComplete} />
                       </Td>
                       <Td>{formatHours(metric.regularHrs)}</Td>
-                      <Td>{formatHours(metric.workedHrs ?? metric.totalHrs)}</Td>
                       <Td>{formatMinutes(metric.overtime)}</Td>
                       <Td>{formatMinutes(metric.nightDifferential)}</Td>
                       <Td>{formatMinutes(metric.late)}</Td>

@@ -72,7 +72,7 @@ export default function History() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[900px] border-collapse text-left text-sm">
               <thead className="bg-slate-100 text-xs uppercase text-slate-600">
                 <tr>
                   <Th>Date</Th>
@@ -80,7 +80,6 @@ export default function History() {
                   <Th>Time Out</Th>
                   <Th>Status</Th>
                   <Th>Regular</Th>
-                  <Th>Worked</Th>
                   <Th>OT</Th>
                   <Th>ND</Th>
                   <Th>Late</Th>
@@ -110,9 +109,6 @@ export default function History() {
                         </span>
                       </Td>
                       <Td>{formatHours(metric?.regularHrs)}</Td>
-                      <Td>
-                        {formatHours(metric?.workedHrs ?? metric?.totalHrs)}
-                      </Td>
                       <Td>{formatMinutes(metric?.overtime)}</Td>
                       <Td>{formatMinutes(metric?.nightDifferential)}</Td>
                       <Td>{formatMinutes(metric?.late)}</Td>

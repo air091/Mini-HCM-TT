@@ -17,14 +17,14 @@ export default function AdminDashboard() {
       (summary, report) => {
         const metric = report.metric || {};
 
-        summary.workedHrs += Number(metric.workedHrs ?? metric.totalHrs ?? 0);
+        summary.regularHrs += Number(metric.regularHrs || 0);
         summary.overtime += Number(metric.overtime || 0);
         summary.late += Number(metric.late || 0);
         if (Number(metric.late || 0) > 0) summary.lateEmployees += 1;
 
         return summary;
       },
-      { workedHrs: 0, overtime: 0, late: 0, lateEmployees: 0 },
+      { regularHrs: 0, overtime: 0, late: 0, lateEmployees: 0 },
     );
   }, [dailyReports]);
 
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
           value={loading ? "..." : dailyReports.length}
           icon={<CalendarRange size={18} />}
         />
-        <InfoTile label="Worked Today" value={formatHours(totals.workedHrs)} />
+        <InfoTile label="Regular Today" value={formatHours(totals.regularHrs)} />
         <InfoTile
           label="Late Employees"
           value={loading ? "..." : totals.lateEmployees}

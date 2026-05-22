@@ -55,8 +55,9 @@ export const metrics = async (userId: string, attendanceId: string) => {
   }
 
   const regularHoursLimit = getRegularHoursLimit(start, end);
-  const workedHours = getWorkedHours(timeIn, timeOut, start, regularHoursLimit);
-  const regularHours = Math.min(workedHours, regularHoursLimit);
+  const totalHours = getWorkedHours(timeIn, timeOut, start, regularHoursLimit);
+  const workedHours = Math.min(totalHours, regularHoursLimit);
+  const regularHours = workedHours;
   const nightDifferentialMins = getNightDifferentialMinutes(timeIn, timeOut);
   const overtimeMins = getOvertimeMinutes(end, timeOut);
   const lateMins = getLateMinutes(start, timeIn);
@@ -65,7 +66,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
   const summaryRef = await db.collection("dailySummary").add({
     attendanceId,
     regularHrs: regularHours,
-    totalHrs: workedHours,
+    totalHrs: totalHours,
     workedHrs: workedHours,
     overtimeMins,
     nightDifferentialMins,

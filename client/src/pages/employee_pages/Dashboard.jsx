@@ -22,6 +22,8 @@ export default function Dashboard() {
 
   const latestAttendance = sortedAttendances[0] || null;
   const latestMetric = latestAttendance?.metric;
+  const scheduleStart = formatTime(user?.schedule?.start);
+  const scheduleEnd = formatTime(user?.schedule?.end);
 
   const fetchAttendances = useCallback(async () => {
     try {
@@ -106,6 +108,11 @@ export default function Dashboard() {
             <p className="text-sm text-slate-500">Loading attendance...</p>
           ) : (
             <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <InfoTile label="Schedule Start" value={scheduleStart} />
+                <InfoTile label="Schedule End" value={scheduleEnd} />
+              </div>
+
               <div>
                 <p className="text-sm text-slate-500">Current status</p>
                 <p className="text-2xl font-semibold">
@@ -173,12 +180,6 @@ export default function Dashboard() {
                   value={formatMetric(latestMetric?.regularHrs)}
                 />
                 <InfoTile
-                  label="Worked Hours"
-                  value={formatMetric(
-                    latestMetric?.workedHrs ?? latestMetric?.totalHrs,
-                  )}
-                />
-                <InfoTile
                   label="Overtime"
                   value={formatMinutes(latestMetric?.overtime)}
                 />
@@ -224,6 +225,34 @@ function formatDateOnly(value) {
   if (!value) return "-";
 
   return String(value).split(" ").at(0) || "-";
+}
+
+function formatTime(value) {
+  const date = parseDate(value);
+  if (!date) return "-";
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const period = hours >= 12 ? "PM" : "AM";
+
+  hours %= 12;
+  hours = hours || 12;
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${period}`;
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") return value.toDate();
+
+  if (typeof value === "object") {
+    const seconds = value.seconds ?? value._seconds;
+    if (typeof seconds === "number") return new Date(seconds * 1000);
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatMetric(value) {
