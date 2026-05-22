@@ -15,6 +15,8 @@ import Dashboard from "./pages/employee_pages/Dashboard";
 import History from "./pages/employee_pages/History";
 import AdminDashboard from "./pages/admin_pages/AdminDashboard";
 import Employees from "./pages/admin_pages/Employees";
+import EmployeeDetail from "./pages/admin_pages/EmployeeDetail";
+import Reports from "./pages/admin_pages/Reports";
 import EmployeeLayout from "./layouts/employeeLayout";
 import AdminLayout from "./layouts/adminLayout";
 
@@ -68,6 +70,14 @@ const router = createBrowserRouter([
               {
                 path: "/admin/employees",
                 element: <Employees />,
+              },
+              {
+                path: "/admin/employees/:userId",
+                element: <EmployeeDetail />,
+              },
+              {
+                path: "/admin/reports",
+                element: <Reports />,
               },
             ],
           },
