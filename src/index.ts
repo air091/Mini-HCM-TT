@@ -20,6 +20,18 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+app.get("/", (_req, res) => {
+  return res.status(200).json({
+    message: "Mini HCM API is running",
+  });
+});
+
+app.get("/health", (_req, res) => {
+  return res.status(200).json({
+    status: "ok",
+  });
+});
+
 app.use("/api/admin/employees", adminRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/attendance", attendanceRouter);
