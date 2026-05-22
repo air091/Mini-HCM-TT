@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { getDashboardPath } from "../lib/auth";
 
 export default function Register() {
-  const { register, error } = useAuth();
+  const { register, error, user, loading } = useAuth();
   const navigate = useNavigate();
 
   const [registerCredentials, setRegisterCredentials] = useState({
@@ -21,6 +22,8 @@ export default function Register() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const handleOnChange = (event) => {
     const { name, value } = event.target;
@@ -43,22 +46,26 @@ export default function Register() {
 
   const handleOnSubmit = async (event) => {
     event.preventDefault();
+    setFormError("");
 
     if (registerCredentials.password !== registerCredentials.confirmPassword) {
-      alert("Passwords do not match");
+      setFormError("Passwords do not match");
       return;
     }
 
     try {
+      setSubmitting(true);
       const response = await register(registerCredentials);
-      const role = response.user.role;
-
-      if (role === "admin") navigate("/admin/dashboard");
-      else navigate("/dashboard");
-    } catch (err) {
-      console.error(err);
+      navigate(getDashboardPath(response.user.role), { replace: true });
+    } catch {
+      // AuthContext owns the visible error message.
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (user) return <Navigate to={getDashboardPath(user.role)} replace />;
 
   return (
     <div className="h-screen flex items-center justify-center">
@@ -66,9 +73,9 @@ export default function Register() {
         <h1 className="text-[20px]">Register your account</h1>
 
         <form onSubmit={handleOnSubmit}>
-          {error && (
+          {(error || formError) && (
             <p className="py-1 px-2 border border-red-500 bg-red-100 mt-2 text-[14px]">
-              {error}
+              {formError || error}
             </p>
           )}
 
@@ -81,6 +88,7 @@ export default function Register() {
               value={registerCredentials.name}
               onChange={handleOnChange}
               autoComplete="off"
+              required
               className="block border px-2 py-1 w-full"
             />
           </label>
@@ -94,6 +102,7 @@ export default function Register() {
               value={registerCredentials.email}
               onChange={handleOnChange}
               autoComplete="off"
+              required
               className="block border px-2 py-1 w-full"
             />
           </label>
@@ -102,12 +111,12 @@ export default function Register() {
           <label className="mt-2 flex justify-between">
             <span>Timezone</span>
             <select
-              name="timezone"
-              value={registerCredentials.timezone}
+              name="timeZone"
+              value={registerCredentials.timeZone}
               onChange={handleOnChange}
               className="border px-2 py-1"
             >
-              <option value="asia/manila">Asia/Manila</option>
+              <option value="Asia/Manila">Asia/Manila</option>
             </select>
           </label>
 
@@ -119,11 +128,12 @@ export default function Register() {
               <div className="w-full">
                 <span className="block">Start</span>
                 <input
-                  type="datetime-local"
+                  type="time"
                   value={registerCredentials.schedule.start}
                   onChange={(e) =>
                     handleScheduleChange("start", e.target.value)
                   }
+                  required
                   className="border block px-2 py-1 w-full"
                 />
               </div>
@@ -131,9 +141,10 @@ export default function Register() {
               <div className="w-full">
                 <span className="block">End</span>
                 <input
-                  type="datetime-local"
+                  type="time"
                   value={registerCredentials.schedule.end}
                   onChange={(e) => handleScheduleChange("end", e.target.value)}
+                  required
                   className="border px-2 py-1 w-full"
                 />
               </div>
@@ -150,6 +161,7 @@ export default function Register() {
                 name="password"
                 value={registerCredentials.password}
                 onChange={handleOnChange}
+                required
                 className="block px-2 py-1 w-full"
               />
 
@@ -171,16 +183,25 @@ export default function Register() {
               name="confirmPassword"
               value={registerCredentials.confirmPassword}
               onChange={handleOnChange}
+              required
               className="block border px-2 py-1 w-full"
             />
           </label>
 
           <button
             type="submit"
-            className="cursor-pointer block border px-4 mt-2"
+            disabled={submitting}
+            className="cursor-pointer block border px-4 mt-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Register
+            {submitting ? "Creating account..." : "Register"}
           </button>
+
+          <p className="mt-3 text-[14px]">
+            Already have an account?{" "}
+            <Link to="/login" className="underline">
+              Login
+            </Link>
+          </p>
         </form>
       </div>
     </div>

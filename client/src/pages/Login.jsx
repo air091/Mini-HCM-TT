@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { getDashboardPath } from "../lib/auth";
 
 export default function Login() {
-  const { login, error } = useAuth();
+  const { login, error, user, loading } = useAuth();
   const [loginCredentials, setLoginCredentials] = useState({
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleOnChange = (event) => {
     const { name, value } = event.target;
@@ -19,15 +22,27 @@ export default function Login() {
 
   const handleOnSubmit = async (event) => {
     event.preventDefault();
-    const response = await login(
-      loginCredentials.email,
-      loginCredentials.password,
-    );
 
-    const role = response.user.role;
-    if (role === "admin") navigate("/admin/dashboard");
-    else navigate("/dashboard");
+    try {
+      setSubmitting(true);
+      const response = await login(
+        loginCredentials.email,
+        loginCredentials.password,
+      );
+
+      const fallbackPath = getDashboardPath(response.user.role);
+      navigate(location.state?.from?.pathname || fallbackPath, {
+        replace: true,
+      });
+    } catch {
+      // AuthContext owns the visible error message.
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (user) return <Navigate to={getDashboardPath(user.role)} replace />;
 
   return (
     <div className="h-screen flex items-center justify-center">
@@ -50,6 +65,7 @@ export default function Login() {
               placeholder="Ex. johndoe@email.com"
               value={loginCredentials.email}
               onChange={handleOnChange}
+              required
               className="block border px-2 py-1 w-full"
             />
           </label>
@@ -64,6 +80,7 @@ export default function Login() {
                 placeholder="Enter password"
                 value={loginCredentials.password}
                 onChange={handleOnChange}
+                required
                 className="block px-2 py-1 w-full"
               />
 
@@ -77,10 +94,18 @@ export default function Login() {
           </label>
           <button
             type="submit"
-            className="cursor-pointer block border px-4 mt-2"
+            disabled={submitting}
+            className="cursor-pointer block border px-4 mt-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Login
+            {submitting ? "Logging in..." : "Login"}
           </button>
+
+          <p className="mt-3 text-[14px]">
+            No account yet?{" "}
+            <Link to="/register" className="underline">
+              Register
+            </Link>
+          </p>
         </form>
       </div>
     </div>

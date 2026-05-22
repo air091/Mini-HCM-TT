@@ -1,25 +1,28 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../lib/api";
 import axios from "axios";
-
-export const AuthContext = createContext(null);
+import { AuthContext } from "./authContextValue";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  let refreshPromise = null;
+  const refreshPromiseRef = useRef(null);
 
   const setAuthHeader = (token) => {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    if (token) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      return;
+    }
+
+    delete api.defaults.headers.common.Authorization;
   };
 
   // =========================
   // PROFILE
   // =========================
-  const fetchProfile = async (token) => {
+  const fetchProfile = useCallback(async (token) => {
     try {
       const response = await api.get("/api/auth/profile", {
         headers: {
@@ -35,7 +38,7 @@ export function AuthProvider({ children }) {
       setError("Failed to fetch user profile");
       throw err;
     }
-  };
+  }, []);
 
   // =========================
   // REGISTER
@@ -43,7 +46,9 @@ export function AuthProvider({ children }) {
   const register = async (payload) => {
     try {
       setError(null);
-      const response = await api.post("/api/auth/register", payload);
+      const registrationPayload = { ...payload };
+      delete registrationPayload.confirmPassword;
+      const response = await api.post("/api/auth/register", registrationPayload);
       const token = response.data.accessToken;
       setAccessToken(token);
       setAuthHeader(token);
@@ -71,7 +76,7 @@ export function AuthProvider({ children }) {
       setError(null);
 
       const response = await api.post("/api/auth/login", {
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -96,9 +101,26 @@ export function AuthProvider({ children }) {
   // =========================
   // REFRESH TOKEN
   // =========================
-  const refreshToken = async () => {
-    if (!refreshPromise) {
-      refreshPromise = api
+  const logout = useCallback(async () => {
+    const token = api.defaults.headers.common.Authorization;
+
+    setUser(null);
+    setAccessToken(null);
+    setError(null);
+    setAuthHeader(null);
+
+    try {
+      await api.post("/api/auth/logout", null, {
+        headers: token ? { Authorization: token } : undefined,
+      });
+    } catch {
+      // Local auth state is already cleared.
+    }
+  }, []);
+
+  const refreshToken = useCallback(async () => {
+    if (!refreshPromiseRef.current) {
+      refreshPromiseRef.current = api
         .post("/api/auth/refresh")
         .then(async (response) => {
           const newToken = response.data.accessToken;
@@ -110,35 +132,18 @@ export function AuthProvider({ children }) {
 
           return newToken;
         })
-        .catch((err) => {
+        .catch(() => {
           logout();
           setError("Session expired. Please login again.");
           return null;
         })
         .finally(() => {
-          refreshPromise = null;
+          refreshPromiseRef.current = null;
         });
     }
 
-    return refreshPromise;
-  };
-
-  // =========================
-  // LOGOUT
-  // =========================
-  const logout = async () => {
-    try {
-      setUser(null);
-      setAccessToken(null);
-      setError(null);
-
-      await api.post("/api/auth/logout");
-    } catch (err) {
-      // even if logout fails, clear local state
-      setUser(null);
-      setAccessToken(null);
-    }
-  };
+    return refreshPromiseRef.current;
+  }, [fetchProfile, logout]);
 
   // =========================
   // INIT AUTH
@@ -156,7 +161,7 @@ export function AuthProvider({ children }) {
         await fetchProfile(newToken);
 
         setError(null);
-      } catch (err) {
+      } catch {
         setUser(null);
         setAccessToken(null);
       } finally {
@@ -165,7 +170,7 @@ export function AuthProvider({ children }) {
     };
 
     initAuth();
-  }, []);
+  }, [fetchProfile]);
 
   // =========================
   // AXIOS INTERCEPTOR
@@ -194,7 +199,7 @@ export function AuthProvider({ children }) {
     return () => {
       api.interceptors.response.eject(interceptor);
     };
-  }, []);
+  }, [refreshToken]);
 
   // =========================
   // CONTEXT VALUE
