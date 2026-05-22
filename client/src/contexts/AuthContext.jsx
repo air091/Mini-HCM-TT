@@ -38,6 +38,32 @@ export function AuthProvider({ children }) {
   };
 
   // =========================
+  // REGISTER
+  // =========================
+  const register = async (payload) => {
+    try {
+      setError(null);
+      const response = await api.post("/api/auth/register", payload);
+      const token = response.data.accessToken;
+      setAccessToken(token);
+      setAuthHeader(token);
+
+      const profile = await fetchProfile(token);
+
+      setUser(profile);
+
+      return { user: profile };
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Registration failed");
+      } else {
+        setError("Registration failed");
+      }
+      throw err;
+    }
+  };
+
+  // =========================
   // LOGIN
   // =========================
   const login = async (email, password) => {
@@ -181,6 +207,7 @@ export function AuthProvider({ children }) {
         loading,
         error,
         login,
+        register,
         logout,
         api,
       }}

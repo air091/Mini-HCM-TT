@@ -9,6 +9,7 @@ import {
   type UserCredentialType,
 } from "../types/userTypes.js";
 import bcrypt from "bcrypt";
+import { Timestamp } from "firebase-admin/firestore";
 
 type AuthResponse = {
   id: string;
@@ -97,7 +98,10 @@ export const register = async ({
     password: hashedPassword,
     timeZone,
     role,
-    schedule,
+    schedule: {
+      start: Timestamp.fromDate(new Date(schedule.start)),
+      end: Timestamp.fromDate(new Date(schedule.end)),
+    },
   });
 
   const userId = userRef.id;
@@ -140,8 +144,8 @@ export const profile = async (userId: string) => {
     id: userDoc.id,
     ...safeUser,
     schedule: {
-      start: safeUser.schedule.start.toDate(),
-      end: safeUser.schedule.end.toDate(),
+      start: safeUser.schedule.start,
+      end: safeUser.schedule.end,
     },
   };
 };

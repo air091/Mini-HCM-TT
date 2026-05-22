@@ -5,8 +5,8 @@ export type UserCredentialType = {
   role: string;
   timeZone: string;
   schedule: {
-    start: FirebaseFirestore.Timestamp;
-    end: FirebaseFirestore.Timestamp;
+    start: string | Date;
+    end: string | Date;
   };
 };
 
@@ -16,8 +16,8 @@ export type UserSafeCredentialType = {
   role: string;
   timeZone: string;
   schedule: {
-    start: string;
-    end: string;
+    start: string | Date;
+    end: string | Date;
   };
 };
 
