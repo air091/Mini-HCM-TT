@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
 import Dashboard from "./pages/employee_pages/Dashboard";
+import History from "./pages/employee_pages/History";
 import AdminDashboard from "./pages/admin_pages/AdminDashboard";
 import EmployeeLayout from "./layouts/employeeLayout";
 import AdminLayout from "./layouts/adminLayout";
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
               {
                 path: "/dashboard",
                 element: <Dashboard />,
+              },
+              {
+                path: "/history",
+                element: <History />,
               },
             ],
           },

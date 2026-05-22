@@ -1,4 +1,4 @@
-import { LayoutDashboard } from "lucide-react";
+import { History, LayoutDashboard } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 export default function EmployeeSidebar() {
@@ -15,6 +15,11 @@ export default function EmployeeSidebar() {
       <NavLink to="/dashboard" className={linkClass}>
         <LayoutDashboard size={18} />
         <span>Dashboard</span>
+      </NavLink>
+
+      <NavLink to="/history" className={linkClass}>
+        <History size={18} />
+        <span>History</span>
       </NavLink>
     </nav>
   );
