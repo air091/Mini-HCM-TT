@@ -1,5 +1,4 @@
 import { db } from "../configs/firebase.js";
-import { getAttendanceById } from "./attendanceService.js";
 
 export const metrics = async (userId: string, attendanceId: string) => {
   const userSnapshot = await db.collection("users").doc(userId).get();
@@ -12,14 +11,21 @@ export const metrics = async (userId: string, attendanceId: string) => {
     throw new Error("User schedule missing");
   }
 
-  const attendance = await getAttendanceById(attendanceId);
+  const attendanceSnapshot = await db
+    .collection("attendance")
+    .doc(attendanceId)
+    .get();
+
+  if (!attendanceSnapshot.exists) throw new Error("No attendance found");
+
+  const attendance = attendanceSnapshot.data();
 
   if (!attendance?.timeIn || !attendance?.timeOut) {
     throw new Error("Incomplete attendance record");
   }
 
-  const timeIn = attendance.timeIn;
-  const timeOut = attendance.timeOut;
+  const timeIn = attendance.timeIn.toDate();
+  const timeOut = attendance.timeOut.toDate();
 
   if (!(timeIn instanceof Date) || !(timeOut instanceof Date)) {
     throw new Error("Invalid timeIn or timeOut");
@@ -48,7 +54,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
     throw new Error("Already calculated");
   }
 
-  const totalHours = getTotalHours(timeIn, timeOut, start, end);
+  const regularHours = getRegularHours(start, end);
   const workedHours = getWorkedHours(timeIn, timeOut, start);
   const nightDifferentialMins = getNightDifferentialMinutes(timeIn, timeOut);
   const overtimeMins = getOvertimeMinutes(end, timeOut);
@@ -57,7 +63,7 @@ export const metrics = async (userId: string, attendanceId: string) => {
 
   const summaryRef = await db.collection("dailySummary").add({
     attendanceId,
-    regularHrs: totalHours,
+    regularHrs: regularHours,
     workedHrs: workedHours,
     overtimeMins,
     nightDifferentialMins,
@@ -111,34 +117,13 @@ function getWorkedHours(timeIn: Date, timeOut: Date, startShift: Date): number {
   return Math.round(workedHours * 100) / 100;
 }
 
-function getTotalHours(
-  timeIn: Date,
-  timeOut: Date,
-  startShift: Date,
-  endShift: Date,
-): number {
+function getRegularHours(startShift: Date, endShift: Date): number {
   const BREAK_HOURS = 1;
-
-  // clamp attendance within shift
-  const effectiveStart = new Date(
-    Math.max(timeIn.getTime(), startShift.getTime()),
-  );
-
-  const effectiveEnd = new Date(
-    Math.min(timeOut.getTime(), endShift.getTime()),
-  );
-
-  // invalid range
-  if (effectiveEnd <= effectiveStart) return 0;
-
-  const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
+  const diffMs = endShift.getTime() - startShift.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
-
-  // deduct break only if long enough
-  const workedHours = diffHours >= 5 ? diffHours - BREAK_HOURS : diffHours;
-
-  return Math.round(workedHours * 100) / 100;
+  return Math.max(diffHours - BREAK_HOURS, 0);
 }
+
 function getLateMinutes(startShift: Date, timeIn: Date): number {
   // check schedule start and punched in
   const late = Math.max(

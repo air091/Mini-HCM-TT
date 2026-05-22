@@ -1,5 +1,5 @@
 import { db } from "../configs/firebase.js";
-import { toDateSafe } from "../libs/dateConverter.js";
+import { formatDate, toDateSafe } from "../libs/dateConverter.js";
 import { metrics } from "./calculationService.js";
 
 export const getAttendanceById = async (attendanceId: string) => {
@@ -21,21 +21,13 @@ export const getAttendanceById = async (attendanceId: string) => {
   const summary = dailySummarySnapshots.docs[0]?.data();
   const summaryId = dailySummarySnapshots.docs[0]?.id;
 
-  const toDate = (value: any): Date | null => {
-    if (!value) return null;
-    if (value?.toDate) return value.toDate(); // Firestore Timestamp
-    if (value instanceof Date) return value; // already a Date
-    if (typeof value === "string") return new Date(value); // string fallback
-    return null;
-  };
-
   return {
     id: attendanceSnapshot.id,
     userId: d?.userId,
-    timeIn: toDate(d?.timeIn),
-    timeOut: toDate(d?.timeOut),
+    timeIn: formatDate(toDateSafe(d?.timeIn)),
+    timeOut: formatDate(toDateSafe(d?.timeOut)),
     isComplete: d?.isComplete,
-    date: toDate(d?.date),
+    date: formatDate(toDateSafe(d?.date)),
 
     metric: summary
       ? {
@@ -74,10 +66,10 @@ export const getAttendancesByUser = async (userId: string) => {
       return {
         id: doc.id,
         userId: attendanceData.userId,
-        timeIn: attendanceData.timeIn?.toDate() ?? null,
-        timeOut: attendanceData.timeOut?.toDate() ?? null,
+        timeIn: formatDate(toDateSafe(attendanceData.timeIn)) ?? null,
+        timeOut: formatDate(toDateSafe(attendanceData.timeOut)) ?? null,
         isComplete: attendanceData.isComplete,
-        date: attendanceData.date?.toDate() ?? null,
+        date: formatDate(toDateSafe(attendanceData.date)) ?? null,
 
         metric: summary
           ? {

@@ -1,5 +1,9 @@
 import { db } from "../configs/firebase.js";
-import { formatTimestamp, toDateSafe } from "../libs/dateConverter.js";
+import {
+  formatDate,
+  formatTimestamp,
+  toDateSafe,
+} from "../libs/dateConverter.js";
 import { recalculateMetrics } from "./calculationService.js";
 import { Timestamp } from "firebase-admin/firestore";
 // admin can view / edit punches
@@ -105,13 +109,15 @@ export const updateEmployeePunches = async (
   const updatedDoc = await attendanceDoc.ref.get();
 
   // Recalculate metrics after punch update
-  await recalculateMetrics(userId, attendanceId);
+  const metric = await recalculateMetrics(userId, attendanceId);
   const data = updatedDoc.data();
   return {
     id: updatedDoc.id,
     ...data,
-    timeIn: formatTimestamp(data?.timeIn),
-    timeOut: formatTimestamp(data?.timeOut),
+    date: formatDate(data?.date.toDate()),
+    timeIn: formatDate(data?.timeIn.toDate()),
+    timeOut: formatDate(data?.timeOut.toDate()),
+    metric,
   };
 };
 
