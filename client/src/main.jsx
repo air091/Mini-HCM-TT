@@ -14,6 +14,7 @@ import RoleRoute from "./components/RoleRoute";
 import Dashboard from "./pages/employee_pages/Dashboard";
 import History from "./pages/employee_pages/History";
 import AdminDashboard from "./pages/admin_pages/AdminDashboard";
+import Employees from "./pages/admin_pages/Employees";
 import EmployeeLayout from "./layouts/employeeLayout";
 import AdminLayout from "./layouts/adminLayout";
 
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
               {
                 path: "/admin/dashboard",
                 element: <AdminDashboard />,
+              },
+              {
+                path: "/admin/employees",
+                element: <Employees />,
               },
             ],
           },
