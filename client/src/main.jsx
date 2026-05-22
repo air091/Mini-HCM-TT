@@ -13,6 +13,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
 import Dashboard from "./pages/employee_pages/Dashboard";
 import AdminDashboard from "./pages/admin_pages/AdminDashboard";
+import EmployeeLayout from "./layouts/employeeLayout";
+import AdminLayout from "./layouts/adminLayout";
 
 const router = createBrowserRouter([
   {
@@ -33,16 +35,31 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        path: "/dashboard",
-        element: <Dashboard />,
+        element: <RoleRoute allowedRoles={["employee"]} />,
+        children: [
+          {
+            element: <EmployeeLayout />,
+            children: [
+              {
+                path: "/dashboard",
+                element: <Dashboard />,
+              },
+            ],
+          },
+        ],
       },
       // admin only
       {
         element: <RoleRoute allowedRoles={["admin"]} />,
         children: [
           {
-            path: "/admin/dashboard",
-            element: <AdminDashboard />,
+            element: <AdminLayout />,
+            children: [
+              {
+                path: "/admin/dashboard",
+                element: <AdminDashboard />,
+              },
+            ],
           },
         ],
       },

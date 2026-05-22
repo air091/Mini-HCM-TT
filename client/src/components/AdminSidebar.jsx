@@ -1,7 +1,7 @@
 import { LayoutDashboard } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
-export default function EmployeeSidebar() {
+export default function AdminSidebar() {
   const linkClass = ({ isActive }) =>
     [
       "flex items-center gap-2 px-3 py-2 text-sm",
@@ -12,7 +12,7 @@ export default function EmployeeSidebar() {
 
   return (
     <nav className="space-y-1">
-      <NavLink to="/dashboard" className={linkClass}>
+      <NavLink to="/admin/dashboard" className={linkClass}>
         <LayoutDashboard size={18} />
         <span>Dashboard</span>
       </NavLink>
