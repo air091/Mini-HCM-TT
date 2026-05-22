@@ -137,47 +137,48 @@ export const profile = async (userId: string) => {
 
 export const refresh = async (token: string) => {
   if (!token) throw new Error("Unauthorized");
+
   const payload = verifyRefreshToken(token);
 
-  // check user
-  const userDoc = await db.collection("users").doc(payload.sub).get();
+  const userId = payload.sub;
 
+  const userDoc = await db.collection("users").doc(userId).get();
   if (!userDoc.exists) throw new Error("No user found");
 
-  // get the valid token (!revoked)
-  const storedToken = await db
+  const tokenSnap = await db
     .collection("refreshTokens")
-    .where("userId", "==", userDoc.id)
+    .where("userId", "==", userId)
     .where("revokedAt", "==", null)
     .limit(1)
     .get();
 
-  const tokenSnapshot = storedToken.docs[0];
-  const tokenDoc = tokenSnapshot?.data();
+  if (tokenSnap.empty) throw new Error("No active session");
 
-  // check validation by date
-  if (tokenDoc?.expiresAt.toDate() < new Date())
-    throw new Error("Token expired");
+  const doc = tokenSnap.docs[0];
+  const data = doc?.data();
 
-  // rotate token
-  // revoke token
-  await tokenSnapshot?.ref.update({
+  const isValid = await bcrypt.compare(token, data?.hashedToken);
+  if (!isValid) throw new Error("Invalid refresh token");
+
+  // revoke old token
+  await doc?.ref.update({
     revokedAt: new Date(),
     updatedAt: new Date(),
   });
 
-  // create new token
-  const newRefreshToken = signRefreshToken({ sub: userDoc.id });
-  const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
-  const newAccessToken = signAccessToken({ sub: userDoc.id });
+  // generate new tokens
+  const newRefreshToken = signRefreshToken({ sub: userId });
+  const newAccessToken = signAccessToken({ sub: userId });
 
-  // store hashed refresh token in db
+  const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+
   const now = new Date();
+
   await db.collection("refreshTokens").add({
-    userId: userDoc.id,
+    userId,
     hashedToken: hashedRefreshToken,
     revokedAt: null,
-    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3), // 3d
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3),
     createdAt: now,
     updatedAt: now,
   });

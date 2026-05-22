@@ -98,6 +98,9 @@ export const refreshController = async (
 ) => {
   try {
     const token: string = request.cookies.refreshToken;
+    if (!token)
+      return response.status(401).json({ message: "No refresh token" });
+
     const refreshRef = await refresh(token);
 
     setRefreshTokenCookie(response, refreshRef.newRefreshToken);
