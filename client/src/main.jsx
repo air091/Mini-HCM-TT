@@ -7,6 +7,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
+import Dashboard from "./pages/employee_pages/Dashboard";
+import AdminDashboard from "./pages/admin_pages/AdminDashboard";
 
 const router = createBrowserRouter([
   {
@@ -24,14 +26,15 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/dashboard",
+        element: <Dashboard />,
       },
       // admin only
       {
         element: <RoleRoute allowedRoles={["admin"]} />,
         children: [
           {
-            path: "/admin",
-            element: <Register />,
+            path: "/admin/dashboard",
+            element: <AdminDashboard />,
           },
         ],
       },

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import api from "../lib/api";
+import axios from "axios";
 
 export const AuthContext = createContext(null);
 
@@ -7,39 +8,72 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // prevents multiple refresh calls at the same time
   let refreshPromise = null;
 
   const setAuthHeader = (token) => {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
   };
 
+  // =========================
+  // PROFILE
+  // =========================
   const fetchProfile = async (token) => {
-    const response = await api.get("/auth/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await api.get("/api/auth/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    setUser(response.data.user);
+      setUser(response.data.user);
+      setError(null);
+
+      return response.data.user;
+    } catch (err) {
+      setError("Failed to fetch user profile");
+      throw err;
+    }
   };
 
+  // =========================
+  // LOGIN
+  // =========================
   const login = async (email, password) => {
-    const response = await api.post("/auth/login", { email, password });
+    try {
+      setError(null);
 
-    const token = response.data.accessToken;
+      const response = await api.post("/api/auth/login", {
+        email,
+        password,
+      });
 
-    setAccessToken(token);
-    setAuthHeader(token);
+      const token = response.data.accessToken;
 
-    await fetchProfile(token);
+      setAccessToken(token);
+      setAuthHeader(token);
+
+      const profile = await fetchProfile(token);
+
+      setUser(profile);
+
+      return { user: profile };
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Login failed");
+      }
+      throw err;
+    }
   };
 
+  // =========================
+  // REFRESH TOKEN
+  // =========================
   const refreshToken = async () => {
     if (!refreshPromise) {
       refreshPromise = api
-        .post("/auth/refresh")
+        .post("/api/auth/refresh")
         .then(async (response) => {
           const newToken = response.data.accessToken;
 
@@ -50,8 +84,9 @@ export function AuthProvider({ children }) {
 
           return newToken;
         })
-        .catch((error) => {
+        .catch((err) => {
           logout();
+          setError("Session expired. Please login again.");
           return null;
         })
         .finally(() => {
@@ -62,22 +97,30 @@ export function AuthProvider({ children }) {
     return refreshPromise;
   };
 
+  // =========================
+  // LOGOUT
+  // =========================
   const logout = async () => {
-    setUser(null);
-    setAccessToken(null);
-
     try {
-      await api.post("/auth/logout");
+      setUser(null);
+      setAccessToken(null);
+      setError(null);
+
+      await api.post("/api/auth/logout");
     } catch (err) {
-      // ignore logout errors
+      // even if logout fails, clear local state
+      setUser(null);
+      setAccessToken(null);
     }
   };
 
-  // auto login on refresh
+  // =========================
+  // INIT AUTH
+  // =========================
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const response = await api.post("/auth/refresh");
+        const response = await api.post("/api/auth/refresh");
 
         const newToken = response.data.accessToken;
 
@@ -85,7 +128,9 @@ export function AuthProvider({ children }) {
         setAuthHeader(newToken);
 
         await fetchProfile(newToken);
-      } catch (error) {
+
+        setError(null);
+      } catch (err) {
         setUser(null);
         setAccessToken(null);
       } finally {
@@ -96,7 +141,9 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
-  // interceptor: auto refresh on 401
+  // =========================
+  // AXIOS INTERCEPTOR
+  // =========================
   useEffect(() => {
     const interceptor = api.interceptors.response.use(
       (res) => res,
@@ -123,14 +170,18 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  // =========================
+  // CONTEXT VALUE
+  // =========================
   return (
     <AuthContext.Provider
       value={{
         user,
         accessToken,
+        loading,
+        error,
         login,
         logout,
-        loading,
         api,
       }}
     >

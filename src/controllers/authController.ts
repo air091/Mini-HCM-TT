@@ -5,24 +5,21 @@ import {
   setRefreshTokenCookie,
 } from "../libs/cookies.js";
 
-export const loginController = async (request: Request, response: Response) => {
+export const loginController = async (req: Request, res: Response) => {
   try {
-    const { email, password } = request.body;
-    const user = await login({ email, password });
+    const { email, password } = req.body;
+    const result = await login({ email, password });
 
-    // refresh token in cookie
-    setRefreshTokenCookie(response, user.refreshToken);
+    setRefreshTokenCookie(res, result.refreshToken);
 
-    return response.status(200).json({
-      message: "Log in successful",
-      userId: user.id,
-      accessToken: user.accessToken,
+    return res.status(200).json({
+      message: "Login successful",
+      accessToken: result.accessToken,
     });
   } catch (error) {
-    console.log(`Login controller failed ${error}`);
-    return response
-      .status(500)
-      .json({ message: error instanceof Error ? error.message : error });
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Login failed",
+    });
   }
 };
 

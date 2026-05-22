@@ -22,7 +22,6 @@ export const login = async ({
 }: LoginCredentialType): Promise<AuthResponse> => {
   if (!email || !password) throw new Error("All fields are required");
 
-  // check user
   const isEmailExist = await db
     .collection("users")
     .where("email", "==", email)
@@ -30,35 +29,35 @@ export const login = async ({
     .get();
 
   if (isEmailExist.empty) throw new Error("Email not found");
-  const userDoc = isEmailExist.docs[0];
-  if (!userDoc?.exists) throw new Error("User document not found");
-  const user = userDoc.data() as UserCredentialType;
 
-  // check password
+  const userDoc = isEmailExist.docs[0];
+  const user = userDoc?.data() as UserCredentialType;
+
   const isPasswordMatch = await bcrypt.compare(password, user.password);
   if (!isPasswordMatch) throw new Error("Email or password is incorrect");
 
-  // create token
-  const refreshToken = signRefreshToken({ sub: userDoc.id });
+  const refreshToken = signRefreshToken({ sub: userDoc?.id as string });
+
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
   const accessToken = signAccessToken({
-    sub: userDoc.id,
-    role: userDoc.data().role,
+    sub: userDoc?.id as string,
+    role: user.role, // ✅ FIXED (safer than userDoc.data())
   });
 
   const now = new Date();
 
   await db.collection("refreshTokens").add({
-    userId: userDoc.id,
+    userId: userDoc?.id,
     hashedToken: hashedRefreshToken,
     revokedAt: null,
-    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3), // 3days
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3),
     createdAt: now,
     updatedAt: now,
   });
 
   return {
-    id: userDoc.id,
+    id: userDoc?.id as string,
     refreshToken,
     accessToken,
   };
