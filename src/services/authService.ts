@@ -10,6 +10,7 @@ import {
 } from "../types/userTypes.js";
 import bcrypt from "bcrypt";
 import { Timestamp } from "firebase-admin/firestore";
+import { fromBusinessDateParts } from "../libs/businessTime.js";
 
 type AuthResponse = {
   id: string;
@@ -236,7 +237,15 @@ function parseScheduleTime(value: string | Date): Date {
 
   if (timeOnly) {
     const [, hour, minute] = timeOnly;
-    return new Date(1970, 0, 1, Number(hour), Number(minute), 0, 0);
+    return fromBusinessDateParts(
+      1970,
+      0,
+      1,
+      Number(hour),
+      Number(minute),
+      0,
+      0,
+    );
   }
 
   const date = new Date(trimmed);

@@ -6,6 +6,7 @@ import {
   getWeeklyEmployeeReports,
   updateEmployeePunches,
 } from "../services/adminService.js";
+import { parseBusinessDateTime } from "../libs/businessTime.js";
 
 export const getAllEmployeesController = async (
   request: Request,
@@ -68,8 +69,8 @@ export const updateEmployeePunchesController = async (
     const updatedAttendance = await updateEmployeePunches(
       userId as string,
       attendanceId as string,
-      timeIn ? new Date(timeIn) : undefined,
-      timeOut ? new Date(timeOut) : undefined,
+      parseBusinessDateTime(timeIn),
+      parseBusinessDateTime(timeOut),
     );
     return response.status(200).json({
       message: "Employee punch updated successfully",

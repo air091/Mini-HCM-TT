@@ -136,8 +136,13 @@ function formatTime(value) {
 
   if (Number.isNaN(date.getTime())) return "-";
 
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const businessDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  let hours = businessDate.getUTCHours();
+  const minutes = String(businessDate.getUTCMinutes()).padStart(2, "0");
+  const period = hours >= 12 ? "PM" : "AM";
+
+  hours %= 12;
+  hours = hours || 12;
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${period}`;
 }

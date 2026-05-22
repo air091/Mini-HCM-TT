@@ -1,4 +1,9 @@
 import { db } from "../configs/firebase.js";
+import {
+  fromBusinessDateParts,
+  getBusinessClockParts,
+  getBusinessDateParts,
+} from "../libs/businessTime.js";
 
 export const metrics = async (userId: string, attendanceId: string) => {
   const userSnapshot = await db.collection("users").doc(userId).get();
@@ -33,15 +38,33 @@ export const metrics = async (userId: string, attendanceId: string) => {
 
   const shiftStartRaw = schedule.start.toDate();
   const shiftEndRaw = schedule.end.toDate();
+  const shiftStart = getBusinessClockParts(shiftStartRaw);
+  const shiftEnd = getBusinessClockParts(shiftEndRaw);
+  const timeInDate = getBusinessDateParts(timeIn);
 
-  const start = new Date(timeIn);
-  start.setHours(shiftStartRaw.getHours(), shiftStartRaw.getMinutes(), 0, 0);
-
-  const end = new Date(timeIn);
-  end.setHours(shiftEndRaw.getHours(), shiftEndRaw.getMinutes(), 0, 0);
+  const start = fromBusinessDateParts(
+    timeInDate.year,
+    timeInDate.monthIndex,
+    timeInDate.day,
+    shiftStart.hours,
+    shiftStart.minutes,
+  );
+  let end = fromBusinessDateParts(
+    timeInDate.year,
+    timeInDate.monthIndex,
+    timeInDate.day,
+    shiftEnd.hours,
+    shiftEnd.minutes,
+  );
 
   if (end <= start) {
-    end.setDate(end.getDate() + 1);
+    end = fromBusinessDateParts(
+      timeInDate.year,
+      timeInDate.monthIndex,
+      timeInDate.day + 1,
+      shiftEnd.hours,
+      shiftEnd.minutes,
+    );
   }
 
   const summaryExists = await db
@@ -162,12 +185,19 @@ function getOvertimeMinutes(endShift: Date, timeOut: Date): number {
 }
 
 function getNightDifferentialMinutes(timeIn: Date, timeOut: Date): number {
-  const ndStart = new Date(timeIn);
-  ndStart.setHours(22, 0, 0, 0);
-
-  const ndEnd = new Date(ndStart);
-  ndEnd.setDate(ndEnd.getDate() + 1);
-  ndEnd.setHours(6, 0, 0, 0);
+  const timeInDate = getBusinessDateParts(timeIn);
+  const ndStart = fromBusinessDateParts(
+    timeInDate.year,
+    timeInDate.monthIndex,
+    timeInDate.day,
+    22,
+  );
+  const ndEnd = fromBusinessDateParts(
+    timeInDate.year,
+    timeInDate.monthIndex,
+    timeInDate.day + 1,
+    6,
+  );
 
   const overlapStart = Math.max(timeIn.getTime(), ndStart.getTime());
 

@@ -61,8 +61,10 @@ export default function EmployeeDetail() {
       setMessage("");
 
       const payload = {};
-      if (editForm.timeIn) payload.timeIn = editForm.timeIn;
-      if (editForm.timeOut) payload.timeOut = editForm.timeOut;
+      if (editForm.timeIn)
+        payload.timeIn = toBusinessDateTimeOffset(editForm.timeIn);
+      if (editForm.timeOut)
+        payload.timeOut = toBusinessDateTimeOffset(editForm.timeOut);
 
       await api.patch(
         `/api/admin/employees/${userId}/attendance/${attendanceId}/punches`,
@@ -345,16 +347,18 @@ function formatTime(value) {
 }
 
 function formatNumericDate(date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const year = String(date.getFullYear()).slice(-2);
+  const businessDate = toBusinessDate(date);
+  const month = String(businessDate.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(businessDate.getUTCDate()).padStart(2, "0");
+  const year = String(businessDate.getUTCFullYear()).slice(-2);
 
   return `${month}/${day}/${year}`;
 }
 
 function formatClockTime(date) {
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const businessDate = toBusinessDate(date);
+  let hours = businessDate.getUTCHours();
+  const minutes = String(businessDate.getUTCMinutes()).padStart(2, "0");
   const period = hours >= 12 ? "PM" : "AM";
 
   hours %= 12;
@@ -367,8 +371,18 @@ function toDateTimeLocalValue(value) {
   const date = parseDate(value);
   if (!date) return "";
 
-  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return localDate.toISOString().slice(0, 16);
+  const businessDate = toBusinessDate(date);
+  const datePart = [
+    businessDate.getUTCFullYear(),
+    String(businessDate.getUTCMonth() + 1).padStart(2, "0"),
+    String(businessDate.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+  const timePart = [
+    String(businessDate.getUTCHours()).padStart(2, "0"),
+    String(businessDate.getUTCMinutes()).padStart(2, "0"),
+  ].join(":");
+
+  return `${datePart}T${timePart}`;
 }
 
 function parseDate(value) {
@@ -376,6 +390,14 @@ function parseDate(value) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toBusinessDate(date) {
+  return new Date(date.getTime() + 8 * 60 * 60 * 1000);
+}
+
+function toBusinessDateTimeOffset(value) {
+  return value.length === 16 ? `${value}:00+08:00` : `${value}+08:00`;
 }
 
 function formatHours(value) {
